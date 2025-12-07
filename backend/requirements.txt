@@ -4,6 +4,10 @@ sqlmodel
 sqlite-utils
 python-dotenv
 httpx
-faiss-cpu
+openai
+pinecone
 numpy
+tweepy
+flask
+waitress
 xdk

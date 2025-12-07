@@ -3,17 +3,19 @@ import {
   Briefcase, 
   Users, 
   Activity, 
-  Settings, 
-  LayoutDashboard,
-  Terminal
+  Settings,
+  Terminal,
+  Bot,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Jobs", href: "/jobs", icon: Briefcase },
+  { name: "Agents", href: "/", icon: Bot },
   { name: "Candidates", href: "/candidates", icon: Users },
+  { name: "Jobs", href: "/jobs", icon: Briefcase },
   { name: "Activity", href: "/activity", icon: Activity },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -26,7 +28,7 @@ export function Sidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded bg-foreground/10">
             <Terminal className="h-4 w-4 text-foreground" />
           </div>
-          <span className="text-base font-semibold text-foreground tracking-tight">GrokOS</span>
+          <span className="text-base font-semibold text-foreground tracking-tight">GrokReach</span>
         </div>
 
         {/* Navigation */}
@@ -45,7 +47,12 @@ export function Sidebar() {
               }
             >
               <item.icon className="h-4 w-4" />
-              {item.name}
+              <span className="flex-1">{item.name}</span>
+              {item.badge && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-primary-foreground">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

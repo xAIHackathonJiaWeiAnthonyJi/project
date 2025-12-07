@@ -8,17 +8,25 @@
 python3 -m pip install -r requirements.txt
 ```
 
-2. Create `.env` file with your X API credentials:
+2. Create `.env` file with your API credentials:
 
 ```bash
-# X API Bearer Token (for reading user data)
-X_BEARER_TOKEN=your_bearer_token_here
+# Create .env file with the following variables:
 
-# X API OAuth 1.0a credentials (for sending messages)
-X_CONSUMER_KEY=your_consumer_key_here
-X_CONSUMER_SECRET=your_consumer_secret_here
-X_ACCESS_TOKEN=your_access_token_here
-X_ACCESS_TOKEN_SECRET=your_access_token_secret_here
+# Grok AI API Configuration
+GROK_API_KEY=your_grok_api_key_here
+
+# X (Twitter) API Configuration
+# You can use either Bearer Token (recommended) or OAuth 1.0a credentials
+
+# Option 1: Bearer Token (recommended for read-only operations)
+X_BEARER_TOKEN=your_x_bearer_token_here
+
+# Option 2: OAuth 1.0a credentials (for full API access)
+X_API_KEY=your_x_api_key_here
+X_API_SECRET=your_x_api_secret_here
+X_ACCESS_TOKEN=your_x_access_token_here
+X_ACCESS_TOKEN_SECRET=your_x_access_token_secret_here
 
 # Database Configuration
 DATABASE_URL=sqlite:///./recruiter.db
@@ -44,12 +52,6 @@ The API will be available at `http://localhost:8000`
 - `POST /api/jobs` - Create a new job
 - `GET /api/jobs` - List all jobs
 - `GET /api/jobs/{id}` - Get a specific job
-
-### Messages (X/Twitter Direct Messages)
-
-- `GET /api/messages/health` - Check if X API credentials are configured
-- `POST /api/messages/send` - Send a direct message to a user
-- `POST /api/messages/send-recruitment` - Send a professional recruitment message
 
 ### Example: Create a Job
 

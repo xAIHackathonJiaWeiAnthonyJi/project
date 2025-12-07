@@ -29,6 +29,9 @@ wheels/
 *.sqlite3
 grok_recruiter.db
 
+# Vector DB
+chroma_db/
+
 # Environment
 .env
 .venv

@@ -1,0 +1,478 @@
+[
+  {
+    "x_handle": "@mleng_sarah",
+    "name": "Sarah Chen",
+    "headline": "ML Engineer @ OpenAI",
+    "location": "San Francisco, CA",
+    "experience": [
+      {
+        "company": "OpenAI",
+        "title": "ML Engineer",
+        "duration": "2022-Present",
+        "description": "Building LLM inference pipelines, optimizing transformer models"
+      },
+      {
+        "company": "Google Brain",
+        "title": "Research Engineer",
+        "duration": "2019-2022",
+        "description": "Worked on BERT optimization and distributed training"
+      }
+    ],
+    "education": [
+      {
+        "school": "Stanford University",
+        "degree": "MS Computer Science",
+        "field": "Machine Learning",
+        "year": "2019"
+      }
+    ],
+    "skills": [
+      "PyTorch",
+      "TensorFlow",
+      "CUDA",
+      "LLMs",
+      "Python",
+      "Distributed Systems"
+    ],
+    "years_of_experience": 6
+  },
+  {
+    "x_handle": "@backend_alex",
+    "name": "Alex Rivera",
+    "headline": "Senior Backend Engineer @ Stripe",
+    "location": "New York, NY",
+    "experience": [
+      {
+        "company": "Stripe",
+        "title": "Senior Backend Engineer",
+        "duration": "2021-Present",
+        "description": "Building payment processing infrastructure at scale"
+      },
+      {
+        "company": "Uber",
+        "title": "Backend Engineer",
+        "duration": "2018-2021",
+        "description": "Microservices architecture, API design, database optimization"
+      }
+    ],
+    "education": [
+      {
+        "school": "MIT",
+        "degree": "BS Computer Science",
+        "field": "Software Engineering",
+        "year": "2018"
+      }
+    ],
+    "skills": [
+      "Python",
+      "Go",
+      "PostgreSQL",
+      "Redis",
+      "Kubernetes",
+      "AWS"
+    ],
+    "years_of_experience": 7
+  },
+  {
+    "x_handle": "@frontend_emma",
+    "name": "Emma Williams",
+    "headline": "Frontend Engineer @ Vercel",
+    "location": "Austin, TX",
+    "experience": [
+      {
+        "company": "Vercel",
+        "title": "Senior Frontend Engineer",
+        "duration": "2020-Present",
+        "description": "Building Next.js developer tools and UI components"
+      },
+      {
+        "company": "Airbnb",
+        "title": "Frontend Engineer",
+        "duration": "2017-2020",
+        "description": "React components, design systems, performance optimization"
+      }
+    ],
+    "education": [
+      {
+        "school": "UC Berkeley",
+        "degree": "BS Computer Science",
+        "field": "HCI",
+        "year": "2017"
+      }
+    ],
+    "skills": [
+      "React",
+      "TypeScript",
+      "Next.js",
+      "CSS",
+      "Performance Optimization"
+    ],
+    "years_of_experience": 8
+  },
+  {
+    "x_handle": "@infra_carlos",
+    "name": "Carlos Martinez",
+    "headline": "Infrastructure Engineer @ Cloudflare",
+    "location": "Austin, TX",
+    "experience": [
+      {
+        "company": "Cloudflare",
+        "title": "Infrastructure Engineer",
+        "duration": "2021-Present",
+        "description": "Edge computing, CDN optimization, network infrastructure"
+      },
+      {
+        "company": "AWS",
+        "title": "Site Reliability Engineer",
+        "duration": "2018-2021",
+        "description": "Managing EC2 fleet, building monitoring systems"
+      }
+    ],
+    "education": [
+      {
+        "school": "Carnegie Mellon",
+        "degree": "MS Computer Science",
+        "field": "Distributed Systems",
+        "year": "2018"
+      }
+    ],
+    "skills": [
+      "Linux",
+      "Kubernetes",
+      "Terraform",
+      "Go",
+      "Networking",
+      "Observability"
+    ],
+    "years_of_experience": 7
+  },
+  {
+    "x_handle": "@data_priya",
+    "name": "Priya Patel",
+    "headline": "ML Research Scientist @ Meta",
+    "location": "Menlo Park, CA",
+    "experience": [
+      {
+        "company": "Meta AI",
+        "title": "Research Scientist",
+        "duration": "2020-Present",
+        "description": "Computer vision research, multimodal models"
+      },
+      {
+        "company": "DeepMind",
+        "title": "Research Engineer",
+        "duration": "2018-2020",
+        "description": "Reinforcement learning, model architecture research"
+      }
+    ],
+    "education": [
+      {
+        "school": "Oxford University",
+        "degree": "PhD Computer Science",
+        "field": "Machine Learning",
+        "year": "2018"
+      }
+    ],
+    "skills": [
+      "PyTorch",
+      "Research",
+      "Computer Vision",
+      "NLP",
+      "Python",
+      "CUDA"
+    ],
+    "years_of_experience": 7
+  },
+  {
+    "x_handle": "@fullstack_james",
+    "name": "James Park",
+    "headline": "Full Stack Engineer @ Notion",
+    "location": "San Francisco, CA",
+    "experience": [
+      {
+        "company": "Notion",
+        "title": "Full Stack Engineer",
+        "duration": "2021-Present",
+        "description": "Building collaborative editing features, real-time sync"
+      },
+      {
+        "company": "Figma",
+        "title": "Software Engineer",
+        "duration": "2019-2021",
+        "description": "Real-time collaboration, canvas rendering"
+      }
+    ],
+    "education": [
+      {
+        "school": "University of Washington",
+        "degree": "BS Computer Science",
+        "field": "Software Engineering",
+        "year": "2019"
+      }
+    ],
+    "skills": [
+      "TypeScript",
+      "React",
+      "Node.js",
+      "PostgreSQL",
+      "WebSockets",
+      "Redis"
+    ],
+    "years_of_experience": 6
+  },
+  {
+    "x_handle": "@systems_lisa",
+    "name": "Lisa Anderson",
+    "headline": "Systems Engineer @ Anthropic",
+    "location": "San Francisco, CA",
+    "experience": [
+      {
+        "company": "Anthropic",
+        "title": "Systems Engineer",
+        "duration": "2022-Present",
+        "description": "Building infrastructure for training large language models"
+      },
+      {
+        "company": "NVIDIA",
+        "title": "Performance Engineer",
+        "duration": "2019-2022",
+        "description": "GPU kernel optimization, CUDA programming"
+      }
+    ],
+    "education": [
+      {
+        "school": "Georgia Tech",
+        "degree": "MS Computer Science",
+        "field": "High Performance Computing",
+        "year": "2019"
+      }
+    ],
+    "skills": [
+      "C++",
+      "CUDA",
+      "Python",
+      "Distributed Systems",
+      "GPU Programming"
+    ],
+    "years_of_experience": 6
+  },
+  {
+    "x_handle": "@mobile_david",
+    "name": "David Kim",
+    "headline": "Mobile Engineer @ Discord",
+    "location": "Seattle, WA",
+    "experience": [
+      {
+        "company": "Discord",
+        "title": "Senior Mobile Engineer",
+        "duration": "2020-Present",
+        "description": "iOS and Android app development, voice/video features"
+      },
+      {
+        "company": "Snapchat",
+        "title": "Mobile Engineer",
+        "duration": "2017-2020",
+        "description": "Camera features, AR filters, performance optimization"
+      }
+    ],
+    "education": [
+      {
+        "school": "University of Southern California",
+        "degree": "BS Computer Science",
+        "field": "Mobile Development",
+        "year": "2017"
+      }
+    ],
+    "skills": [
+      "Swift",
+      "Kotlin",
+      "React Native",
+      "iOS",
+      "Android",
+      "Mobile Performance"
+    ],
+    "years_of_experience": 8
+  },
+  {
+    "x_handle": "@ml_researcher",
+    "name": "Dr. Aisha Patel",
+    "headline": "ML Research Scientist @ Google DeepMind",
+    "location": "London, UK",
+    "experience": [
+      {
+        "company": "Google DeepMind",
+        "title": "Research Scientist",
+        "duration": "2021-Present",
+        "description": "Research on large language models and reinforcement learning"
+      },
+      {
+        "company": "OpenAI",
+        "title": "Research Engineer",
+        "duration": "2018-2021",
+        "description": "Worked on GPT-2 and GPT-3 training"
+      }
+    ],
+    "education": [
+      {
+        "school": "MIT",
+        "degree": "PhD Computer Science",
+        "field": "Machine Learning",
+        "year": "2018"
+      }
+    ],
+    "skills": [
+      "Research",
+      "PyTorch",
+      "TensorFlow",
+      "NLP",
+      "LLMs",
+      "Python"
+    ],
+    "years_of_experience": 7
+  },
+  {
+    "x_handle": "@devops_master",
+    "name": "Carlos Rodriguez",
+    "headline": "Senior DevOps Engineer @ Netflix",
+    "location": "Los Gatos, CA",
+    "experience": [
+      {
+        "company": "Netflix",
+        "title": "Senior DevOps Engineer",
+        "duration": "2020-Present",
+        "description": "Managing kubernetes clusters, CI/CD pipelines"
+      },
+      {
+        "company": "Amazon",
+        "title": "DevOps Engineer",
+        "duration": "2017-2020",
+        "description": "AWS infrastructure, terraform, docker"
+      }
+    ],
+    "education": [
+      {
+        "school": "University of Texas",
+        "degree": "BS Computer Science",
+        "field": "Systems",
+        "year": "2017"
+      }
+    ],
+    "skills": [
+      "Kubernetes",
+      "AWS",
+      "Docker",
+      "Terraform",
+      "Python",
+      "Go"
+    ],
+    "years_of_experience": 8
+  },
+  {
+    "x_handle": "@ai_engineer",
+    "name": "Maya Chen",
+    "headline": "AI Engineer @ Anthropic",
+    "location": "San Francisco, CA",
+    "experience": [
+      {
+        "company": "Anthropic",
+        "title": "AI Engineer",
+        "duration": "2022-Present",
+        "description": "Building Claude, working on AI safety"
+      },
+      {
+        "company": "Meta",
+        "title": "ML Engineer",
+        "duration": "2019-2022",
+        "description": "Recommendation systems, PyTorch"
+      }
+    ],
+    "education": [
+      {
+        "school": "Carnegie Mellon",
+        "degree": "MS Computer Science",
+        "field": "AI",
+        "year": "2019"
+      }
+    ],
+    "skills": [
+      "PyTorch",
+      "LLMs",
+      "Python",
+      "AI Safety",
+      "Transformers"
+    ],
+    "years_of_experience": 6
+  },
+  {
+    "x_handle": "@data_scientist",
+    "name": "Raj Sharma",
+    "headline": "Senior Data Scientist @ Spotify",
+    "location": "Stockholm, Sweden",
+    "experience": [
+      {
+        "company": "Spotify",
+        "title": "Senior Data Scientist",
+        "duration": "2020-Present",
+        "description": "Music recommendations, ML modeling"
+      },
+      {
+        "company": "Uber",
+        "title": "Data Scientist",
+        "duration": "2017-2020",
+        "description": "Demand forecasting, pricing algorithms"
+      }
+    ],
+    "education": [
+      {
+        "school": "Stanford",
+        "degree": "MS Statistics",
+        "field": "Data Science",
+        "year": "2017"
+      }
+    ],
+    "skills": [
+      "Python",
+      "scikit-learn",
+      "SQL",
+      "A/B Testing",
+      "Statistics"
+    ],
+    "years_of_experience": 8
+  },
+  {
+    "x_handle": "@security_engineer",
+    "name": "Emily Wilson",
+    "headline": "Security Engineer @ Apple",
+    "location": "Cupertino, CA",
+    "experience": [
+      {
+        "company": "Apple",
+        "title": "Security Engineer",
+        "duration": "2021-Present",
+        "description": "iOS security, cryptography"
+      },
+      {
+        "company": "Google",
+        "title": "Security Analyst",
+        "duration": "2018-2021",
+        "description": "Vulnerability research, penetration testing"
+      }
+    ],
+    "education": [
+      {
+        "school": "UC Berkeley",
+        "degree": "BS Computer Science",
+        "field": "Security",
+        "year": "2018"
+      }
+    ],
+    "skills": [
+      "Security",
+      "Cryptography",
+      "C++",
+      "Python",
+      "iOS"
+    ],
+    "years_of_experience": 7
+  }
+]

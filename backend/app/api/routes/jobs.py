@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from typing import List
 from app.models.schemas import Job
 from app.db.database import get_session
+from app.services.grok_service import parse_job_description
 
 router = APIRouter()
 

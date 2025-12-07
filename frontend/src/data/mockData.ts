@@ -170,6 +170,137 @@ export const mockCandidates: Candidate[] = [
 ];
 
 export const mockActivity: ActivityEvent[] = [
+  // Agent Pipeline Events
+  {
+    id: "a1",
+    type: "agent_pipeline_start",
+    description: "Agent A1 started sourcing pipeline for ML Engineer role",
+    timestamp: new Date("2024-01-28T15:00:00"),
+    jobId: "2",
+    metadata: { agent: "A1", pipeline_id: "pip_2001" }
+  },
+  {
+    id: "a2",
+    type: "agent_step",
+    description: "Step 1/7: Generated job embedding (1536-dim vector)",
+    timestamp: new Date("2024-01-28T15:00:15"),
+    jobId: "2",
+    metadata: { step: 1, agent: "A1" }
+  },
+  {
+    id: "a3",
+    type: "agent_step",
+    description: "Step 2/7: Grok AI discovered 5 topics (LLM inference, PyTorch, distributed training...)",
+    timestamp: new Date("2024-01-28T15:00:42"),
+    jobId: "2",
+    metadata: { step: 2, agent: "A1", topics_count: 5 }
+  },
+  {
+    id: "a4",
+    type: "agent_step",
+    description: "Step 3/7: Found 19 active X users posting about ML topics",
+    timestamp: new Date("2024-01-28T15:01:23"),
+    jobId: "2",
+    metadata: { step: 3, agent: "A1", users_found: 19 }
+  },
+  {
+    id: "a5",
+    type: "agent_step",
+    description: "Step 4/7: Grok AI verified 7 developers (filtered 12 non-developers)",
+    timestamp: new Date("2024-01-28T15:03:45"),
+    jobId: "2",
+    metadata: { step: 4, agent: "A1", developers_verified: 7 }
+  },
+  {
+    id: "a6",
+    type: "agent_step",
+    description: "Step 5/7: Enriched 7 candidates with LinkedIn data",
+    timestamp: new Date("2024-01-28T15:04:12"),
+    jobId: "2",
+    metadata: { step: 5, agent: "A1" }
+  },
+  {
+    id: "a7",
+    type: "agent_step",
+    description: "Step 6/7: Computed compatibility scores (avg: 72/100)",
+    timestamp: new Date("2024-01-28T15:06:33"),
+    jobId: "2",
+    metadata: { step: 6, agent: "A1", avg_score: 72 }
+  },
+  {
+    id: "a8",
+    type: "agent_step",
+    description: "Step 7/7: Routed candidates - 1 interview, 6 take-home, 0 reject",
+    timestamp: new Date("2024-01-28T15:06:45"),
+    jobId: "2",
+    metadata: { step: 7, agent: "A1", interview: 1, takehome: 6, reject: 0 }
+  },
+  
+  // Outreach Events
+  {
+    id: "o1",
+    type: "tweet_sent",
+    description: "Tweeted mention to @Antonio_M_85 about ML Engineer role",
+    timestamp: new Date("2024-01-28T15:07:12"),
+    jobId: "2",
+    metadata: { 
+      username: "Antonio_M_85", 
+      tweet_id: "1997634366974083126",
+      recommendation: "interview"
+    }
+  },
+  {
+    id: "o2",
+    type: "tweet_sent",
+    description: "Tweeted mention to @grok about ML Engineer role",
+    timestamp: new Date("2024-01-28T15:07:15"),
+    jobId: "2",
+    metadata: { 
+      username: "grok", 
+      tweet_id: "1997634368064626943",
+      recommendation: "takehome"
+    }
+  },
+  {
+    id: "o3",
+    type: "tweet_sent",
+    description: "Tweeted mention to @DeepLearn007 about ML Engineer role",
+    timestamp: new Date("2024-01-28T15:07:18"),
+    jobId: "2",
+    metadata: { 
+      username: "DeepLearn007", 
+      tweet_id: "1997634369054462355",
+      recommendation: "takehome"
+    }
+  },
+  
+  // DM Responses
+  {
+    id: "d1",
+    type: "dm_received",
+    description: "@amitcoder1 responded: \"Yes, I'm interested! Would love to learn more.\"",
+    timestamp: new Date("2024-01-28T16:23:45"),
+    jobId: "2",
+    metadata: { 
+      username: "amitcoder1",
+      message: "Yes, I'm interested! Would love to learn more.",
+      sentiment: "positive"
+    }
+  },
+  {
+    id: "d2",
+    type: "dm_received",
+    description: "@Antonio_M_85 responded: \"Sounds interesting, tell me more about the team\"",
+    timestamp: new Date("2024-01-28T17:15:22"),
+    jobId: "2",
+    metadata: { 
+      username: "Antonio_M_85",
+      message: "Sounds interesting, tell me more about the team",
+      sentiment: "positive"
+    }
+  },
+  
+  // Original events
   {
     id: "1",
     type: "sourced",
