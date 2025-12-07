@@ -42,8 +42,8 @@ class JobCandidate(SQLModel, table=True):
     strengths: Optional[List[str]] = Field(default=None, sa_type=JSON)
     weaknesses: Optional[List[str]] = Field(default=None, sa_type=JSON)
     
-    # Pipeline stage
-    stage: str = "sourced"  # sourced, screened, interview, offer, rejected
+    # Pipeline stage - updated with new workflow
+    stage: str = "sourced"  # sourced, reached_out, phone_screened, team_matched, rejected
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
