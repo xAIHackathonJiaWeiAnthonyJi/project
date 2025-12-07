@@ -219,7 +219,7 @@ export function StageManager({
 
         {/* Debug Info */}
         <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-          Debug: Stage={currentStage}, Pipeline={isPipelineRunning ? 'Running' : 'Not Running'}, NextStages={nextStages.length}
+          Debug: Stage={currentStage}, Pipeline={isPipelineRunning ? 'Running' : 'Not Running'}, NextStages={nextStages.length}, JobId={jobId}, CandidateId={candidateId}
         </div>
 
         {/* Quick Actions */}

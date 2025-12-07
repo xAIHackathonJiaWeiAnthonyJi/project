@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Candidate } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QuickActionModal } from "./QuickActionModal";
 import { 
   Github, 
   Twitter, 
@@ -41,6 +43,7 @@ function getScoreColor(score: number): string {
 
 export function CandidateCard({ candidate, jobId }: CandidateCardProps) {
   const navigate = useNavigate();
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   const handleClick = () => {
     if (jobId) {
@@ -48,6 +51,17 @@ export function CandidateCard({ candidate, jobId }: CandidateCardProps) {
     } else {
       navigate(`/candidates/${candidate.id}`);
     }
+  };
+
+  const handleStatusClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setIsQuickActionOpen(true);
+  };
+
+  const handleStageUpdate = (newStage: string) => {
+    // Update the candidate status locally
+    candidate.status = newStage as any;
+    setIsQuickActionOpen(false);
   };
 
   return (
@@ -71,7 +85,7 @@ export function CandidateCard({ candidate, jobId }: CandidateCardProps) {
               </span>
             </div>
           )}
-          {candidate.aiScore !== undefined && (
+          {candidate.aiScore != null && (
             <div className={cn(
               "absolute -bottom-1 -right-1 h-5 w-5 rounded flex items-center justify-center text-[10px] font-bold ring-2 ring-card",
               getScoreColor(candidate.aiScore)
@@ -85,7 +99,12 @@ export function CandidateCard({ candidate, jobId }: CandidateCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-medium text-foreground truncate">{candidate.name}</h3>
-            <Badge variant={statusVariants[candidate.status || "sourced"]} className="text-[10px]">
+            <Badge 
+              variant={statusVariants[candidate.status || "sourced"]} 
+              className="text-[10px] cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={handleStatusClick}
+              title="Click to manage candidate stage"
+            >
               {statusLabels[candidate.status || "sourced"]}
             </Badge>
           </div>
@@ -159,6 +178,17 @@ export function CandidateCard({ candidate, jobId }: CandidateCardProps) {
           <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
       </div>
+
+      {/* Quick Action Modal */}
+      <QuickActionModal
+        isOpen={isQuickActionOpen}
+        onClose={() => setIsQuickActionOpen(false)}
+        candidateId={candidate.id}
+        candidateName={candidate.name}
+        currentStage={candidate.status || "sourced"}
+        jobId={jobId}
+        onStageUpdate={handleStageUpdate}
+      />
     </div>
   );
 }
