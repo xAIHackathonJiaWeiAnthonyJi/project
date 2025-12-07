@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Candidate, CandidateStatus } from "@/types";
+import { QuickActionModal } from "../components/candidates/QuickActionModal";
 
 const statusLabels: Record<string, string> = {
   sourced: "SOURCED",
@@ -49,6 +50,10 @@ export default function CandidateDetail() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentStage, setCurrentStage] = useState<CandidateStatus>("sourced");
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+
+  // Debug logging
+  console.log("CandidateDetail - id:", id, "jobId:", jobId, "isQuickActionOpen:", isQuickActionOpen);
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -381,6 +386,24 @@ export default function CandidateDetail() {
           </div>
         </div>
       </div>
+
+      {/* Quick Action Modal */}
+      {candidate && (
+        <QuickActionModal
+          isOpen={isQuickActionOpen}
+          onClose={() => setIsQuickActionOpen(false)}
+          candidateId={candidate.id}
+          candidateName={candidate.name}
+          currentStage={candidate.status || currentStage}
+          jobId={jobId ? parseInt(jobId) : undefined}
+          onStageUpdate={(newStage) => {
+            setCurrentStage(newStage);
+            if (candidate.status !== undefined) {
+              setCandidate(prev => prev ? { ...prev, status: newStage } : null);
+            }
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }
