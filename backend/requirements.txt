@@ -6,3 +6,4 @@ python-dotenv
 httpx
 faiss-cpu
 numpy
+xdk
