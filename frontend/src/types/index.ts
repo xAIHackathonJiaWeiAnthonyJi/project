@@ -70,6 +70,19 @@ export interface Candidate {
   strengths?: string[];
   weaknesses?: string[];
   jobId?: number;
+  
+  // Frontend-mapped fields
+  twitterHandle?: string;
+  location?: string;
+  skills?: string[];
+  experience?: any[];
+  githubStats?: any;
+  githubUrl?: string;
+  aiSummary?: string;
+  aiRecommendation?: AIRecommendation;
+  createdAt?: Date;
+  lastUpdated?: Date;
+  avatarUrl?: string;
 }
 
 export interface JobCandidate {

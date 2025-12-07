@@ -231,6 +231,54 @@ export default function CandidateDetail() {
               </section>
             )}
 
+            {/* Strengths & Weaknesses */}
+            {(candidate.strengths || candidate.weaknesses) && (
+              <section className="rounded-lg border border-border bg-card p-5">
+                <h2 className="text-sm font-medium text-foreground uppercase tracking-wide mb-4">Assessment</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {candidate.strengths && candidate.strengths.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">STRENGTHS</h3>
+                      <ul className="space-y-1.5">
+                        {candidate.strengths.map((strength, i) => (
+                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-green-500 mt-0.5">✓</span>
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {candidate.weaknesses && candidate.weaknesses.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-2">AREAS FOR GROWTH</h3>
+                      <ul className="space-y-1.5">
+                        {candidate.weaknesses.map((weakness, i) => (
+                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-orange-500 mt-0.5">→</span>
+                            <span>{weakness}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* X/Twitter Bio */}
+            {candidate.x_bio && (
+              <section className="rounded-lg border border-border bg-card p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Twitter className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground uppercase tracking-wide">X (Twitter) Bio</h2>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {candidate.x_bio}
+                </p>
+              </section>
+            )}
+
             {/* Experience */}
             {candidate.linkedin_data?.experience && candidate.linkedin_data.experience.length > 0 && (
               <section className="rounded-lg border border-border bg-card p-5">

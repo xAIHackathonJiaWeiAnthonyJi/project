@@ -90,7 +90,7 @@ export const candidatesApi = {
     if (params?.limit) searchParams.append("limit", params.limit.toString());
     if (params?.offset) searchParams.append("offset", params.offset.toString());
 
-    const candidates = await fetchApi<Candidate[]>(`/candidates/?${searchParams.toString()}`);
+    const candidates = await fetchApi<any[]>(`/candidates/?${searchParams.toString()}`);
     return candidates.map(candidate => ({
       ...candidate,
       createdAt: new Date(candidate.created_at),
@@ -102,8 +102,13 @@ export const candidatesApi = {
       skills: candidate.linkedin_data?.skills || [],
       experience: candidate.linkedin_data?.experience || [],
       githubStats: candidate.linkedin_data?.github_stats,
-      aiSummary: candidate.linkedin_data?.headline,
-      aiRecommendation: getRecommendationFromScore(candidate.aiScore)
+      githubUrl: candidate.linkedin_data?.github_stats ? `https://github.com/${candidate.x_handle?.replace('@', '')}` : undefined,
+      aiSummary: candidate.aiReasoning || candidate.linkedin_data?.headline,
+      aiScore: candidate.aiScore,
+      status: candidate.status || 'sourced',
+      aiRecommendation: getRecommendationFromScore(candidate.aiScore),
+      strengths: candidate.strengths,
+      weaknesses: candidate.weaknesses
     }));
   },
 
