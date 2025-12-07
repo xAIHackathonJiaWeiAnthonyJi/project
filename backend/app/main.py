@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import init_db
-from app.api.routes import jobs, logs, candidates, activity
+from app.api.routes import jobs, logs, candidates, activity, sourcing
 
 app = FastAPI(title="Grok Recruiter API")
 
@@ -32,5 +32,6 @@ async def root():
 app.include_router(jobs.router, prefix="/api/jobs", tags=["jobs"])
 app.include_router(candidates.router, prefix="/api")
 app.include_router(activity.router, prefix="/api")
+app.include_router(sourcing.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
 

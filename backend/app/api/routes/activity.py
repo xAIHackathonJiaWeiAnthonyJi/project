@@ -35,7 +35,7 @@ def get_activity_feed(
             "id": f"log_{log.id}",
             "type": activity_type,
             "description": log.log,
-            "timestamp": log.timestamp,
+            "timestamp": log.timestamp.isoformat() + "Z",  # Explicitly mark as UTC
             "jobId": str(log.job_id) if log.job_id else None,
             "candidateId": str(log.candidate_id) if log.candidate_id else None,
             "metadata": log.context or {}
@@ -118,7 +118,7 @@ def get_pipeline_activity(job_id: int, session: Session = Depends(get_session)):
             pipeline_stages[log.logtype].append({
                 "id": log.id,
                 "message": log.log,
-                "timestamp": log.timestamp,
+                "timestamp": log.timestamp.isoformat() + "Z",  # Explicitly mark as UTC
                 "metadata": log.context
             })
         else:
@@ -126,7 +126,7 @@ def get_pipeline_activity(job_id: int, session: Session = Depends(get_session)):
                 "id": log.id,
                 "type": log.logtype,
                 "message": log.log,
-                "timestamp": log.timestamp,
+                "timestamp": log.timestamp.isoformat() + "Z",  # Explicitly mark as UTC
                 "metadata": log.context
             })
     
@@ -159,7 +159,7 @@ def get_recent_outreach(
             "id": f"outreach_{log.id}",
             "type": "tweet_sent" if "mention" in log.log.lower() else "dm_sent",
             "description": log.log,
-            "timestamp": log.timestamp,
+            "timestamp": log.timestamp.isoformat() + "Z",  # Explicitly mark as UTC
             "jobId": str(log.job_id) if log.job_id else None,
             "metadata": log.context or {}
         }

@@ -99,9 +99,9 @@ export default function Dashboard() {
               AI-powered recruiting platform overview
             </p>
           </div>
-          <Button onClick={() => navigate('/agents')}>
+          <Button onClick={() => navigate('/jobs')}>
             <Plus className="h-4 w-4 mr-2" />
-            Run Agent Pipeline
+            Start Sourcing
           </Button>
         </div>
       </header>
@@ -130,7 +130,7 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" onClick={() => navigate('/agents')}>
+            <Button variant="outline" onClick={() => navigate('/agent-control')}>
               View Details
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>

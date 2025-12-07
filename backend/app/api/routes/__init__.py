@@ -1,3 +1,3 @@
 # Route handlers
-from . import jobs, logs, candidates, activity
+from . import jobs, logs, candidates, activity, sourcing
 

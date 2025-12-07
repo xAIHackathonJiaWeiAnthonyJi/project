@@ -11,11 +11,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Agents", href: "/", icon: Bot },
-  { name: "Candidates", href: "/candidates", icon: Users },
+  { name: "Dashboard", href: "/", icon: BarChart3 },
+  { name: "Agent Control", href: "/agent-control", icon: Bot },
   { name: "Jobs", href: "/jobs", icon: Briefcase },
+  { name: "Candidates", href: "/candidates", icon: Users },
   { name: "Activity", href: "/activity", icon: Activity },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

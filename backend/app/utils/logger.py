@@ -44,27 +44,27 @@ class AgentLogger:
     @staticmethod
     def log_sourcing(message: str, job_id: Optional[int] = None, candidate_id: Optional[int] = None, **kwargs):
         """Log sourcing-related actions"""
-        AgentLogger.log("sourcing", message, job_id, candidate_id, kwargs)
+        AgentLogger.log("sourcing", message, job_id, candidate_id, **kwargs)
     
     @staticmethod
     def log_scoring(message: str, job_id: Optional[int] = None, candidate_id: Optional[int] = None, **kwargs):
         """Log scoring-related actions"""
-        AgentLogger.log("scoring", message, job_id, candidate_id, kwargs)
+        AgentLogger.log("scoring", message, job_id, candidate_id, **kwargs)
     
     @staticmethod
     def log_outreach(message: str, job_id: Optional[int] = None, candidate_id: Optional[int] = None, **kwargs):
         """Log outreach-related actions"""
-        AgentLogger.log("outreach", message, job_id, candidate_id, kwargs)
+        AgentLogger.log("outreach", message, job_id, candidate_id, **kwargs)
     
     @staticmethod
     def log_search(message: str, job_id: Optional[int] = None, **kwargs):
         """Log search-related actions"""
-        AgentLogger.log("search", message, job_id, None, kwargs)
+        AgentLogger.log("search", message, job_id, None, **kwargs)
     
     @staticmethod
     def log_embedding(message: str, job_id: Optional[int] = None, **kwargs):
         """Log embedding-related actions"""
-        AgentLogger.log("embedding", message, job_id, None, kwargs)
+        AgentLogger.log("embedding", message, job_id, None, **kwargs)
     
     @staticmethod
     def log_error(message: str, error: Exception, **kwargs):

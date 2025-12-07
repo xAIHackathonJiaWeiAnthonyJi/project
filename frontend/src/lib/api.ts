@@ -214,10 +214,61 @@ function getRecommendationFromScore(score?: number): "reject" | "takehome" | "in
   return "reject";
 }
 
+// Sourcing API
+export const sourcingApi = {
+  async startPipeline(jobId: number, options: {
+    sendOutreach?: boolean;
+    dryRun?: boolean;
+    jobLink?: string;
+  } = {}): Promise<{
+    success: boolean;
+    message: string;
+    job_id: number;
+    pipeline_id?: string;
+  }> {
+    return await fetchApi("/sourcing/start", {
+      method: "POST",
+      body: JSON.stringify({
+        job_id: jobId,
+        send_outreach: options.sendOutreach || false,
+        dry_run: options.dryRun !== false, // Default to true
+        job_link: options.jobLink
+      }),
+    });
+  },
+
+  async getStatus(jobId: number): Promise<{
+    job_id: number;
+    is_running: boolean;
+    pipeline_id?: string;
+    status: string;
+  }> {
+    return await fetchApi(`/sourcing/status/${jobId}`);
+  },
+
+  async stopPipeline(jobId: number): Promise<{
+    success: boolean;
+    message: string;
+    pipeline_id?: string;
+  }> {
+    return await fetchApi(`/sourcing/stop/${jobId}`, {
+      method: "POST",
+    });
+  },
+
+  async listRunningPipelines(): Promise<{
+    running_pipelines: { job_id: number; pipeline_id: string }[];
+    total_running: number;
+  }> {
+    return await fetchApi("/sourcing/pipelines");
+  }
+};
+
 // Export all APIs
 export const api = {
   jobs: jobsApi,
   candidates: candidatesApi,
   activity: activityApi,
   logs: logsApi,
+  sourcing: sourcingApi,
 };

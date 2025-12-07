@@ -1,8 +1,10 @@
 import { Job } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, ChevronRight, Zap } from "lucide-react";
+import { Users, Clock, ChevronRight, Zap, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { api } from "@/lib/api";
+import { useState } from "react";
 
 interface JobCardProps {
   job: Job;
@@ -10,7 +12,25 @@ interface JobCardProps {
 
 export function JobCard({ job }: JobCardProps) {
   const navigate = useNavigate();
+  const [sourcingLoading, setSourcingLoading] = useState(false);
   const progress = Math.round((job.screenedCount / job.candidateCount) * 100);
+
+  const handleStartSourcing = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setSourcingLoading(true);
+      await api.sourcing.startPipeline(job.id, {
+        dryRun: true, // Default to dry run for quick sourcing
+        sendOutreach: false
+      });
+      // Navigate to job detail to see progress
+      navigate(`/jobs/${job.id}`);
+    } catch (error) {
+      console.error("Error starting sourcing:", error);
+    } finally {
+      setSourcingLoading(false);
+    }
+  };
 
   return (
     <div 
@@ -69,11 +89,14 @@ export function JobCard({ job }: JobCardProps) {
           size="sm" 
           variant="outline"
           className="text-xs h-7"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
+          onClick={handleStartSourcing}
+          disabled={sourcingLoading}
         >
-          <Zap className="h-3 w-3 mr-1" />
+          {sourcingLoading ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <Zap className="h-3 w-3 mr-1" />
+          )}
           Source
         </Button>
         <Button 

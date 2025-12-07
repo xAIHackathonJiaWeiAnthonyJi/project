@@ -64,57 +64,8 @@ export default function Activity() {
     totalCandidates: 7
   };
   
-  // Mock outreach conversations
-  const outreachConversations = [
-    {
-      id: "o1",
-      type: "tweet_sent" as const,
-      username: "Antonio_M_85",
-      name: "Antonio Martínez",
-      message: "@Antonio_M_85 Hi Antonio! We have a Senior ML Engineer role that aligns perfectly with your skills. Would love to chat - DM us if interested! https://jobs.grokreach.com/ml-2001",
-      timestamp: new Date("2024-01-28T15:07:12"),
-      tweetId: "1997634366974083126",
-      recommendation: "interview"
-    },
-    {
-      id: "d1",
-      type: "dm_received" as const,
-      username: "Antonio_M_85",
-      name: "Antonio Martínez",
-      message: "Sounds interesting, tell me more about the team size and tech stack",
-      timestamp: new Date("2024-01-28T17:15:22"),
-      sentiment: "positive"
-    },
-    {
-      id: "o2",
-      type: "tweet_sent" as const,
-      username: "grok",
-      name: "Grok",
-      message: "@grok Hi Grok! We're hiring a Senior ML Engineer. Your profile caught our attention - would you be open to a take-home assignment? DM us! https://jobs.grokreach.com/ml-2001",
-      timestamp: new Date("2024-01-28T15:07:15"),
-      tweetId: "1997634368064626943",
-      recommendation: "takehome"
-    },
-    {
-      id: "o3",
-      type: "tweet_sent" as const,
-      username: "amitcoder1",
-      name: "Amit Hasan",
-      message: "@amitcoder1 Hi Amit! We're hiring a Senior ML Engineer. Your profile caught our attention - would you be open to a take-home assignment? DM us! https://jobs.grokreach.com/ml-2001",
-      timestamp: new Date("2024-01-28T15:07:18"),
-      tweetId: "1997634369054462355",
-      recommendation: "takehome"
-    },
-    {
-      id: "d2",
-      type: "dm_received" as const,
-      username: "amitcoder1",
-      name: "Amit Hasan",
-      message: "Yes, I'm interested! Would love to learn more about the role and compensation.",
-      timestamp: new Date("2024-01-28T16:23:45"),
-      sentiment: "positive"
-    },
-  ];
+  // Use real outreach data (fetched from API)
+  const outreachConversations = outreachActivities;
 
   return (
     <DashboardLayout>
@@ -127,10 +78,6 @@ export default function Activity() {
               Real-time AI agent execution and candidate outreach
             </p>
           </div>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export Log
-          </Button>
         </div>
       </header>
 

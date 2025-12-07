@@ -14,6 +14,9 @@ from app.services.grok_scoring_service import compute_compatibility_score
 from app.services.x_outreach_service import send_outreach_batch  # DM (won't work)
 from app.services.x_mention_service import send_mentions_batch  # Public mentions (works!)
 from app.utils.logger import AgentLogger
+from app.db.database import engine
+from app.models.schemas import Candidate, JobCandidate
+from sqlmodel import Session
 import json
 import os
 
@@ -515,6 +518,137 @@ class SourcingAgent:
         return routed
     
     # ========================================
+    # DATABASE OPERATIONS
+    # ========================================
+    
+    def save_candidates_to_database(self, scored_candidates: List[Dict], job_id: int) -> Dict:
+        """
+        Save discovered candidates to the database
+        
+        Args:
+            scored_candidates: List of candidates with scores
+            job_id: Job ID to associate candidates with
+            
+        Returns:
+            Dictionary with save results
+        """
+        AgentLogger.log_sourcing(
+            f"Saving {len(scored_candidates)} candidates to database for job {job_id}",
+            job_id=job_id,
+            candidates_to_save=len(scored_candidates)
+        )
+        
+        saved_count = 0
+        updated_count = 0
+        
+        try:
+            with Session(engine) as session:
+                for candidate_data in scored_candidates:
+                    # Extract candidate info
+                    name = candidate_data.get('name', candidate_data.get('username', 'Unknown'))
+                    x_handle = candidate_data.get('username')
+                    x_bio = candidate_data.get('bio', '')
+                    linkedin_data = candidate_data.get('linkedin_data', {})
+                    
+                    # Check if candidate already exists
+                    existing_candidate = session.query(Candidate).filter(
+                        Candidate.x_handle == f"@{x_handle}"
+                    ).first()
+                    
+                    if existing_candidate:
+                        # Update existing candidate
+                        existing_candidate.x_bio = x_bio
+                        existing_candidate.linkedin_data = linkedin_data
+                        candidate_id = existing_candidate.id
+                        updated_count += 1
+                        
+                        AgentLogger.log_sourcing(
+                            f"Updated existing candidate: {name} (@{x_handle})",
+                            job_id=job_id,
+                            candidate_id=candidate_id
+                        )
+                    else:
+                        # Create new candidate
+                        new_candidate = Candidate(
+                            name=name,
+                            x_handle=f"@{x_handle}",
+                            x_bio=x_bio,
+                            linkedin_data=linkedin_data
+                        )
+                        session.add(new_candidate)
+                        session.flush()  # Get the ID
+                        candidate_id = new_candidate.id
+                        saved_count += 1
+                        
+                        AgentLogger.log_sourcing(
+                            f"Saved new candidate: {name} (@{x_handle})",
+                            job_id=job_id,
+                            candidate_id=candidate_id
+                        )
+                    
+                    # Create or update job-candidate relationship
+                    compatibility = candidate_data.get('compatibility', {})
+                    score = compatibility.get('compatibility_score', 0)
+                    reasoning = compatibility.get('reasoning', '')
+                    recommendation = candidate_data.get('recommendation', 'sourced')
+                    
+                    # Map recommendation to stage
+                    stage_mapping = {
+                        'fasttrack': 'interview',
+                        'interview': 'interview', 
+                        'takehome': 'takehome_assigned',
+                        'reject': 'rejected',
+                        'sourced': 'sourced'
+                    }
+                    stage = stage_mapping.get(recommendation, 'sourced')
+                    
+                    # Check if job-candidate relationship exists
+                    existing_job_candidate = session.query(JobCandidate).filter(
+                        JobCandidate.job_id == job_id,
+                        JobCandidate.candidate_id == candidate_id
+                    ).first()
+                    
+                    if existing_job_candidate:
+                        # Update existing relationship
+                        existing_job_candidate.compatibility_score = score
+                        existing_job_candidate.ai_reasoning = reasoning
+                        existing_job_candidate.stage = stage
+                    else:
+                        # Create new relationship
+                        job_candidate = JobCandidate(
+                            job_id=job_id,
+                            candidate_id=candidate_id,
+                            compatibility_score=score,
+                            ai_reasoning=reasoning,
+                            stage=stage
+                        )
+                        session.add(job_candidate)
+                
+                session.commit()
+                
+        except Exception as e:
+            AgentLogger.log_error(
+                f"Failed to save candidates to database for job {job_id}",
+                error=e,
+                job_id=job_id
+            )
+            raise
+        
+        AgentLogger.log_sourcing(
+            f"Successfully saved candidates: {saved_count} new, {updated_count} updated",
+            job_id=job_id,
+            new_candidates=saved_count,
+            updated_candidates=updated_count,
+            total_processed=len(scored_candidates)
+        )
+        
+        return {
+            "saved_count": saved_count,
+            "updated_count": updated_count,
+            "total_processed": len(scored_candidates)
+        }
+    
+    # ========================================
     # FULL PIPELINE
     # ========================================
     
@@ -586,6 +720,12 @@ class SourcingAgent:
         
         reach_out_count = len(routed_candidates['fasttrack']) + len(routed_candidates['interview']) + len(routed_candidates['takehome'])
         print(f"✅ {reach_out_count} candidates ready for outreach")
+        
+        # Save candidates to database
+        print("💾 Saving candidates to database...")
+        all_candidates = routed_candidates['fasttrack'] + routed_candidates['interview'] + routed_candidates['takehome'] + routed_candidates['reject']
+        save_results = self.save_candidates_to_database(all_candidates, job_id)
+        print(f"✅ Saved {save_results['saved_count']} new candidates, updated {save_results['updated_count']} existing")
         
         # Step 8 (Optional): Send outreach via tweet mentions
         outreach_results = None

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CandidateCard } from "@/components/candidates/CandidateCard";
+import { SourcingControl } from "@/components/sourcing/SourcingControl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +166,37 @@ export default function JobDetail() {
       </header>
 
       <div className="p-8">
+        {/* Sourcing Control */}
+        <div className="mb-8">
+          <SourcingControl 
+            job={job}
+            onPipelineStart={() => {
+              // Refresh candidates when pipeline starts
+              const refreshData = async () => {
+                try {
+                  const candidatesData = await api.candidates.getAll({ job_id: job.id });
+                  setCandidates(candidatesData);
+                } catch (error) {
+                  console.error("Error refreshing candidates:", error);
+                }
+              };
+              refreshData();
+            }}
+            onPipelineComplete={() => {
+              // Refresh candidates when pipeline completes
+              const refreshData = async () => {
+                try {
+                  const candidatesData = await api.candidates.getAll({ job_id: job.id });
+                  setCandidates(candidatesData);
+                } catch (error) {
+                  console.error("Error refreshing candidates:", error);
+                }
+              };
+              refreshData();
+            }}
+          />
+        </div>
+
         {/* Candidates in Stage */}
         <div className="space-y-4">
           {stageCandidates.length > 0 ? (
