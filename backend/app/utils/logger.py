@@ -71,6 +71,11 @@ class AgentLogger:
         """Log error events"""
         context_data = {"error": str(error), "error_type": type(error).__name__, **kwargs}
         AgentLogger.log("error", message, **context_data)
+    
+    @staticmethod
+    def log_interview(message: str, job_id: Optional[int] = None, candidate_id: Optional[int] = None, **kwargs):
+        """Log interview-related actions"""
+        AgentLogger.log("interview", message, job_id, candidate_id, **kwargs)
 
 # Convenience function for quick logging
 def log_agent_action(logtype: str, message: str, **kwargs):

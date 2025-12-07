@@ -60,3 +60,46 @@ class AgentLog(SQLModel, table=True):
     candidate_id: Optional[int] = Field(default=None, foreign_key="candidate.id")
     context: Optional[Dict] = Field(default=None, sa_type=JSON)  # Additional context data
 
+class InterviewTemplate(SQLModel, table=True):
+    """Templates for take-home assignments and phone screen questions"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    job_id: int = Field(foreign_key="job.id")
+    interview_type: str  # "takehome" or "phone_screen"
+    title: str
+    description: str = Field(sa_column=Column(Text))
+    questions: Dict = Field(default={}, sa_type=JSON)  # List of questions/prompts
+    evaluation_criteria: Dict = Field(default={}, sa_type=JSON)  # Scoring rubric
+    time_limit_hours: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class InterviewSubmission(SQLModel, table=True):
+    """Tracks interview submissions and AI + human evaluations"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    candidate_id: int = Field(foreign_key="candidate.id")
+    job_id: int = Field(foreign_key="job.id")
+    template_id: int = Field(foreign_key="interviewtemplate.id")
+    
+    # Submission details
+    submitted_at: Optional[datetime] = None
+    submission_data: Dict = Field(default={}, sa_type=JSON)  # Responses/links/files
+    
+    # AI Evaluation
+    ai_score: Optional[float] = None  # 0-100
+    ai_reasoning: Optional[str] = Field(default=None, sa_column=Column(Text))
+    ai_strengths: Optional[List[str]] = Field(default=None, sa_type=JSON)
+    ai_weaknesses: Optional[List[str]] = Field(default=None, sa_type=JSON)
+    ai_recommendation: Optional[str] = None  # "strong_yes", "yes", "maybe", "no"
+    
+    # Human Review
+    human_reviewed: bool = False
+    human_score_override: Optional[float] = None
+    reviewer_notes: Optional[str] = Field(default=None, sa_column=Column(Text))
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    
+    # Status
+    status: str = "sent"  # sent, submitted, evaluating, reviewed, approved, rejected
+    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
