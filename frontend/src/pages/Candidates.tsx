@@ -1,0 +1,106 @@
+import { useState } from "react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { CandidateCard } from "@/components/candidates/CandidateCard";
+import { mockCandidates } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, Zap, Users } from "lucide-react";
+import { CandidateStatus } from "@/types";
+
+const statusFilters: { label: string; value: CandidateStatus | "all" }[] = [
+  { label: "All", value: "all" },
+  { label: "Sourced", value: "sourced" },
+  { label: "Screened", value: "screened" },
+  { label: "Take-home", value: "takehome_assigned" },
+  { label: "Interview", value: "interview" },
+  { label: "Rejected", value: "rejected" },
+];
+
+export default function Candidates() {
+  const [activeFilter, setActiveFilter] = useState<CandidateStatus | "all">("all");
+
+  const filteredCandidates = activeFilter === "all" 
+    ? mockCandidates 
+    : mockCandidates.filter(c => c.status === activeFilter);
+
+  return (
+    <DashboardLayout>
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+        <div className="flex items-center justify-between px-8 py-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Candidates</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {mockCandidates.length} candidates across all jobs
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline">
+              <Zap className="h-4 w-4 mr-2" />
+              Run AI Screening
+            </Button>
+            <Button>
+              <Users className="h-4 w-4 mr-2" />
+              Source Candidates
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="p-8">
+        {/* Filters */}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search candidates..." 
+              className="pl-10"
+            />
+          </div>
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+          </Button>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+          {statusFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveFilter(filter.value)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                activeFilter === filter.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+              }`}
+            >
+              {filter.label}
+              {filter.value === "all" && (
+                <span className="ml-1.5 text-xs opacity-70">({mockCandidates.length})</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Candidates Grid */}
+        <div className="space-y-4">
+          {filteredCandidates.map((candidate) => (
+            <CandidateCard key={candidate.id} candidate={candidate} />
+          ))}
+        </div>
+
+        {filteredCandidates.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground">No candidates found</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Try adjusting your filters or sourcing new candidates.
+            </p>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
