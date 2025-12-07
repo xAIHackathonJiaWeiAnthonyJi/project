@@ -19,16 +19,16 @@ import { CandidateStatus, Job, Candidate } from "@/types";
 
 const pipelineStages: { label: string; status: CandidateStatus }[] = [
   { label: "Sourced", status: "sourced" },
-  { label: "Screened", status: "screened" },
-  { label: "Take-home", status: "takehome_assigned" },
-  { label: "Interview", status: "interview" },
-  { label: "Offer", status: "offer" },
+  { label: "Reached Out", status: "reached_out" },
+  { label: "Phone Screened", status: "phone_screened" },
+  { label: "Team Matched", status: "team_matched" },
+  { label: "Rejected", status: "rejected" },
 ];
 
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeStage, setActiveStage] = useState<CandidateStatus>("screened");
+  const [activeStage, setActiveStage] = useState<CandidateStatus>("sourced");
   const [job, setJob] = useState<Job | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,7 +201,7 @@ export default function JobDetail() {
         <div className="space-y-4">
           {stageCandidates.length > 0 ? (
             stageCandidates.map((candidate) => (
-              <CandidateCard key={candidate.id} candidate={candidate} />
+              <CandidateCard key={candidate.id} candidate={candidate} jobId={job?.id} />
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-border bg-card">

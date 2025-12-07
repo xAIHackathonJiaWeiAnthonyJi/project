@@ -14,25 +14,22 @@ import { useNavigate } from "react-router-dom";
 
 interface CandidateCardProps {
   candidate: Candidate;
+  jobId?: number;
 }
 
-const statusVariants: Record<string, "sourced" | "screened" | "takehome" | "interview" | "offer" | "rejected"> = {
-  sourced: "sourced",
-  screened: "screened",
-  takehome_assigned: "takehome",
-  takehome_reviewed: "takehome",
-  interview: "interview",
-  offer: "offer",
-  rejected: "rejected",
+const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  sourced: "outline",
+  reached_out: "secondary",
+  phone_screened: "default",
+  team_matched: "default",
+  rejected: "destructive",
 };
 
 const statusLabels: Record<string, string> = {
   sourced: "SOURCED",
-  screened: "SCREENED",
-  takehome_assigned: "TAKE-HOME",
-  takehome_reviewed: "REVIEWED",
-  interview: "INTERVIEW",
-  offer: "OFFER",
+  reached_out: "REACHED OUT",
+  phone_screened: "PHONE SCREENED",
+  team_matched: "TEAM MATCHED",
   rejected: "REJECTED",
 };
 
@@ -42,13 +39,21 @@ function getScoreColor(score: number): string {
   return "text-score-low bg-score-low/10";
 }
 
-export function CandidateCard({ candidate }: CandidateCardProps) {
+export function CandidateCard({ candidate, jobId }: CandidateCardProps) {
   const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (jobId) {
+      navigate(`/jobs/${jobId}/candidates/${candidate.id}`);
+    } else {
+      navigate(`/candidates/${candidate.id}`);
+    }
+  };
 
   return (
     <div 
       className="group rounded-lg border border-border bg-card p-4 transition-colors duration-150 hover:bg-accent/30 cursor-pointer animate-fade-in"
-      onClick={() => navigate(`/candidates/${candidate.id}`)}
+      onClick={handleClick}
     >
       <div className="flex items-start gap-4">
         {/* Avatar */}
@@ -80,8 +85,8 @@ export function CandidateCard({ candidate }: CandidateCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-medium text-foreground truncate">{candidate.name}</h3>
-            <Badge variant={statusVariants[candidate.status]} className="text-[10px]">
-              {statusLabels[candidate.status]}
+            <Badge variant={statusVariants[candidate.status || "sourced"]} className="text-[10px]">
+              {statusLabels[candidate.status || "sourced"]}
             </Badge>
           </div>
           

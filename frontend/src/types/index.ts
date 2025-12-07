@@ -1,13 +1,24 @@
 export type CandidateStatus = 
   | "sourced" 
-  | "screened" 
-  | "takehome_assigned" 
-  | "takehome_reviewed" 
-  | "interview" 
-  | "offer" 
+  | "reached_out"
+  | "phone_screened" 
+  | "team_matched" 
   | "rejected";
 
 export type AIRecommendation = "reject" | "takehome" | "interview" | "fasttrack";
+
+export interface CandidateStage {
+  id: CandidateStatus;
+  name: string;
+  description: string;
+  color: string;
+  next_stages: CandidateStatus[];
+}
+
+export interface StageUpdateRequest {
+  stage: CandidateStatus;
+  notes?: string;
+}
 
 export interface Job {
   id: number;
