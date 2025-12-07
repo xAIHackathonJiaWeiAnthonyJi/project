@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { mockCandidates, mockJobs } from "@/data/mockData";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -17,6 +17,8 @@ import {
   ChevronRight,
   RotateCcw
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Candidate } from "@/types";
 
 const statusLabels: Record<string, string> = {
   sourced: "SOURCED",
@@ -47,8 +49,37 @@ function getScoreColor(score: number): string {
 export default function CandidateDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const candidate = mockCandidates.find((c) => c.id === id);
+  useEffect(() => {
+    const fetchCandidate = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const candidateId = parseInt(id);
+        const candidateData = await api.candidates.getById(candidateId);
+        setCandidate(candidateData);
+      } catch (error) {
+        console.error("Error fetching candidate:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidate();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Loading candidate details...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!candidate) {
     return (
@@ -75,19 +106,11 @@ export default function CandidateDetail() {
           
           <div className="flex items-start gap-5">
             {/* Avatar */}
-            {candidate.avatarUrl ? (
-              <img 
-                src={candidate.avatarUrl} 
-                alt={candidate.name}
-                className="h-16 w-16 rounded-lg object-cover ring-1 ring-border"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded-lg bg-accent flex items-center justify-center ring-1 ring-border">
-                <span className="text-2xl font-semibold text-muted-foreground">
-                  {candidate.name.charAt(0)}
-                </span>
-              </div>
-            )}
+            <div className="h-16 w-16 rounded-lg bg-accent flex items-center justify-center ring-1 ring-border">
+              <span className="text-2xl font-semibold text-muted-foreground">
+                {candidate.name.charAt(0)}
+              </span>
+            </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
@@ -103,10 +126,10 @@ export default function CandidateDetail() {
               </div>
               
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                {candidate.location && (
+                {candidate.linkedin_data?.location && (
                   <span className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" />
-                    {candidate.location}
+                    {candidate.linkedin_data.location}
                   </span>
                 )}
                 {candidate.email && (
@@ -118,31 +141,31 @@ export default function CandidateDetail() {
               </div>
 
               <div className="flex items-center gap-2 mt-3">
-                {candidate.githubUrl && (
+                {candidate.linkedin_data?.github_stats && (
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => window.open(candidate.githubUrl, '_blank')}
+                    onClick={() => window.open(`https://github.com/${candidate.name.toLowerCase().replace(' ', '')}`, '_blank')}
                   >
                     <Github className="h-3.5 w-3.5 mr-1.5" />
                     GitHub
                   </Button>
                 )}
-                {candidate.twitterHandle && (
+                {candidate.x_handle && (
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => window.open(`https://twitter.com/${candidate.twitterHandle}`, '_blank')}
+                    onClick={() => window.open(`https://twitter.com/${candidate.x_handle}`, '_blank')}
                   >
                     <Twitter className="h-3.5 w-3.5 mr-1.5" />
                     Twitter
                   </Button>
                 )}
-                {candidate.linkedinUrl && (
+                {candidate.linkedin_data?.profile_url && (
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => window.open(candidate.linkedinUrl, '_blank')}
+                    onClick={() => window.open(candidate.linkedin_data.profile_url, '_blank')}
                   >
                     <Linkedin className="h-3.5 w-3.5 mr-1.5" />
                     LinkedIn
@@ -170,14 +193,14 @@ export default function CandidateDetail() {
           {/* Left Column - AI Analysis */}
           <div className="lg:col-span-2 space-y-6">
             {/* AI Summary */}
-            {candidate.aiSummary && (
+            {(candidate.linkedin_data?.headline || candidate.aiSummary) && (
               <section className="rounded-lg border border-border bg-card p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="h-4 w-4 text-muted-foreground" />
                   <h2 className="text-sm font-medium text-foreground uppercase tracking-wide">AI Summary</h2>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {candidate.aiSummary}
+                  {candidate.aiSummary || candidate.linkedin_data?.headline}
                 </p>
               </section>
             )}
@@ -193,11 +216,11 @@ export default function CandidateDetail() {
             )}
 
             {/* Experience */}
-            {candidate.experience.length > 0 && (
+            {candidate.linkedin_data?.experience && candidate.linkedin_data.experience.length > 0 && (
               <section className="rounded-lg border border-border bg-card p-5">
                 <h2 className="text-sm font-medium text-foreground uppercase tracking-wide mb-4">Experience</h2>
                 <div className="space-y-4">
-                  {candidate.experience.map((exp, index) => (
+                  {candidate.linkedin_data.experience.map((exp, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-accent text-xs font-medium text-muted-foreground">
                         {exp.company.charAt(0)}
@@ -213,21 +236,23 @@ export default function CandidateDetail() {
             )}
 
             {/* Skills */}
-            <section className="rounded-lg border border-border bg-card p-5">
-              <h2 className="text-sm font-medium text-foreground uppercase tracking-wide mb-3">Skills</h2>
-              <div className="flex flex-wrap gap-2">
-                {candidate.skills.map((skill) => (
-                  <Badge key={skill} variant="outline">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </section>
+            {candidate.linkedin_data?.skills && candidate.linkedin_data.skills.length > 0 && (
+              <section className="rounded-lg border border-border bg-card p-5">
+                <h2 className="text-sm font-medium text-foreground uppercase tracking-wide mb-3">Skills</h2>
+                <div className="flex flex-wrap gap-2">
+                  {candidate.linkedin_data.skills.map((skill) => (
+                    <Badge key={skill} variant="outline">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Right Column - GitHub Stats */}
           <div className="space-y-6">
-            {candidate.githubStats && (
+            {candidate.linkedin_data?.github_stats && (
               <section className="rounded-lg border border-border bg-card p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <Github className="h-4 w-4 text-muted-foreground" />
@@ -236,15 +261,15 @@ export default function CandidateDetail() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-2xl font-semibold text-foreground">{candidate.githubStats.repos}</p>
+                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.repos}</p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Repos</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-foreground">{candidate.githubStats.stars.toLocaleString()}</p>
+                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.stars.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Stars</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-foreground">{candidate.githubStats.contributions.toLocaleString()}</p>
+                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.contributions.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Contributions</p>
                   </div>
                 </div>
@@ -252,7 +277,7 @@ export default function CandidateDetail() {
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Languages</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {candidate.githubStats.languages.map((lang) => (
+                    {candidate.linkedin_data.github_stats.languages.map((lang) => (
                       <Badge key={lang} variant="secondary" className="text-xs">
                         {lang}
                       </Badge>
@@ -268,11 +293,11 @@ export default function CandidateDetail() {
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Sourced</span>
-                  <span className="text-foreground">{candidate.createdAt.toLocaleDateString()}</span>
+                  <span className="text-foreground">{new Date(candidate.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Last Updated</span>
-                  <span className="text-foreground">{candidate.lastUpdated.toLocaleDateString()}</span>
+                  <span className="text-foreground">{new Date(candidate.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </section>

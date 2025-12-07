@@ -10,68 +10,87 @@ export type CandidateStatus =
 export type AIRecommendation = "reject" | "takehome" | "interview" | "fasttrack";
 
 export interface Job {
-  id: string;
+  id: number;
   title: string;
   description: string;
   headcount: number;
-  requirements: string[];
-  createdAt: Date;
+  requirements: {
+    skills?: string[];
+    experience_years?: number;
+    must_have?: string[];
+    nice_to_have?: string[];
+  };
+  created_at: string;
   status: "active" | "paused" | "closed";
   candidateCount: number;
   screenedCount: number;
+  embedding_id?: string;
 }
 
 export interface Candidate {
-  id: string;
+  id: number;
   name: string;
   email?: string;
-  githubUrl?: string;
-  twitterHandle?: string;
-  linkedinUrl?: string;
-  avatarUrl?: string;
-  location?: string;
-  status: CandidateStatus;
-  aiScore?: number;
-  aiRecommendation?: AIRecommendation;
-  aiReasoning?: string;
-  aiSummary?: string;
-  skills: string[];
-  experience: {
-    company: string;
-    role: string;
-    duration: string;
-  }[];
-  githubStats?: {
-    repos: number;
-    stars: number;
-    contributions: number;
-    languages: string[];
+  x_handle?: string;
+  x_bio?: string;
+  linkedin_data?: {
+    profile_url?: string;
+    headline?: string;
+    location?: string;
+    experience?: {
+      company: string;
+      role: string;
+      duration: string;
+    }[];
+    skills?: string[];
+    github_stats?: {
+      repos: number;
+      stars: number;
+      contributions: number;
+      languages: string[];
+    };
   };
-  createdAt: Date;
-  lastUpdated: Date;
+  created_at: string;
+  
+  // Job-specific fields (when fetched in context of a job)
+  status?: CandidateStatus;
+  aiScore?: number;
+  aiReasoning?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  jobId?: number;
 }
 
 export interface JobCandidate {
-  jobId: string;
-  candidateId: string;
-  status: CandidateStatus;
-  aiScore: number;
-  aiRecommendation: AIRecommendation;
-  aiReasoning: string;
-  humanOverride?: {
-    decision: AIRecommendation;
-    reason: string;
-    overriddenBy: string;
-    overriddenAt: Date;
-  };
+  id: number;
+  job_id: number;
+  candidate_id: number;
+  compatibility_score?: number;
+  ai_reasoning?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  stage: CandidateStatus;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ActivityEvent {
   id: string;
-  type: "sourced" | "screened" | "override" | "status_change" | "policy_update";
+  type: "sourced" | "screened" | "override" | "status_change" | "policy_update" | 
+        "agent_pipeline_start" | "agent_step" | "tweet_sent" | "dm_received" | "error";
   description: string;
   metadata?: Record<string, unknown>;
-  timestamp: Date;
+  timestamp: string;
   jobId?: string;
   candidateId?: string;
+}
+
+export interface AgentLog {
+  id: number;
+  logtype: string;
+  log: string;
+  timestamp: string;
+  job_id?: number;
+  candidate_id?: number;
+  context?: Record<string, unknown>;
 }

@@ -2,22 +2,49 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ActivityFeed } from "@/components/activity/ActivityFeed";
 import { AgentPipelineCard } from "@/components/activity/AgentPipelineCard";
 import { OutreachCard } from "@/components/activity/OutreachCard";
-import { mockActivity } from "@/data/mockData";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bot, Twitter, MessageSquare, Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ActivityEvent } from "@/types";
 
 export default function Activity() {
   const [activeTab, setActiveTab] = useState("all");
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
+  const [outreachActivities, setOutreachActivities] = useState<ActivityEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchActivityData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all activities
+        const allActivities = await api.activity.getFeed({ limit: 100 });
+        setActivities(allActivities);
+        
+        // Fetch outreach-specific activities
+        const outreachData = await api.activity.getRecentOutreach(50);
+        setOutreachActivities(outreachData);
+        
+      } catch (error) {
+        console.error("Error fetching activity data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivityData();
+  }, []);
   
   // Filter events by type
-  const agentEvents = mockActivity.filter(e => 
+  const agentEvents = activities.filter(e => 
     e.type?.includes("agent") || e.type === "sourced" || e.type === "screened"
   );
   
-  const outreachEvents = mockActivity.filter(e => 
+  const outreachEvents = activities.filter(e => 
     e.type === "tweet_sent" || e.type === "dm_received"
   );
   
@@ -126,7 +153,11 @@ export default function Activity() {
           {/* All Activity Tab */}
           <TabsContent value="all" className="space-y-6">
             <div className="rounded-xl border border-border bg-card p-6">
-              <ActivityFeed events={mockActivity} />
+              {loading ? (
+                <div className="text-center py-12 text-muted-foreground">Loading activities...</div>
+              ) : (
+                <ActivityFeed events={activities} />
+              )}
             </div>
           </TabsContent>
           
@@ -146,7 +177,11 @@ export default function Activity() {
                   <Bot className="h-4 w-4 text-primary" />
                   Agent Execution Log
                 </h3>
-                <ActivityFeed events={agentEvents} />
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading agent activities...</div>
+                ) : (
+                  <ActivityFeed events={agentEvents} />
+                )}
               </div>
             </div>
           </TabsContent>
@@ -205,9 +240,24 @@ export default function Activity() {
                 Outreach Conversations
               </h3>
               <div className="space-y-3">
-                {outreachConversations.map(event => (
-                  <OutreachCard key={event.id} event={event} />
-                ))}
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading outreach activities...</div>
+                ) : outreachActivities.length > 0 ? (
+                  outreachActivities.map((activity) => (
+                    <OutreachCard key={activity.id} event={{
+                      id: activity.id,
+                      type: activity.type as any,
+                      username: activity.metadata?.username || "Unknown",
+                      name: activity.metadata?.username || "Unknown User",
+                      message: activity.description,
+                      timestamp: new Date(activity.timestamp),
+                      tweetId: activity.metadata?.tweet_id,
+                      recommendation: activity.metadata?.recommendation
+                    }} />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">No outreach activities found</div>
+                )}
               </div>
             </div>
           </TabsContent>

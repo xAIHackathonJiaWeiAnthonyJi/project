@@ -2,7 +2,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { JobCard } from "@/components/dashboard/JobCard";
 import { ActivityFeed } from "@/components/activity/ActivityFeed";
-import { mockJobs, mockCandidates, mockActivity } from "@/data/mockData";
+import { api } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -18,24 +18,75 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Job, ActivityEvent } from "@/types";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  
-  const stats = {
-    activeJobs: mockJobs.filter(j => j.status === "active").length,
-    totalCandidates: mockCandidates.length,
-    screenedToday: 23,
-    conversionRate: "34%",
-  };
-  
-  // Agent stats
-  const agentStats = {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
+  const [stats, setStats] = useState({
+    activeJobs: 0,
+    totalCandidates: 0,
+    screenedToday: 0,
+    conversionRate: "0%",
+  });
+  const [agentStats, setAgentStats] = useState({
     activeAgents: 1,
-    pipelinesRunToday: 3,
-    tweetsSentToday: 7,
-    dmResponsesReceived: 2,
-  };
+    pipelinesRunToday: 0,
+    tweetsSentToday: 0,
+    dmResponsesReceived: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch jobs
+        const jobsData = await api.jobs.getAll();
+        setJobs(jobsData);
+        
+        // Fetch recent activities
+        const activitiesData = await api.activity.getFeed({ limit: 10 });
+        setActivities(activitiesData);
+        
+        // Fetch activity stats
+        const activityStatsData = await api.activity.getStats(1); // Last 24 hours
+        
+        // Calculate stats
+        const activeJobsCount = jobsData.filter(j => j.status === "active").length;
+        const totalCandidatesCount = jobsData.reduce((sum, job) => sum + job.candidateCount, 0);
+        const screenedTodayCount = jobsData.reduce((sum, job) => sum + job.screenedCount, 0);
+        
+        setStats({
+          activeJobs: activeJobsCount,
+          totalCandidates: totalCandidatesCount,
+          screenedToday: screenedTodayCount,
+          conversionRate: totalCandidatesCount > 0 ? `${Math.round((screenedTodayCount / totalCandidatesCount) * 100)}%` : "0%",
+        });
+        
+        // Calculate agent stats from activity data
+        const pipelinesCount = activityStatsData.activity_by_type?.sourcing || 0;
+        const tweetsCount = activityStatsData.activity_by_type?.outreach || 0;
+        
+        setAgentStats({
+          activeAgents: 1,
+          pipelinesRunToday: pipelinesCount,
+          tweetsSentToday: tweetsCount,
+          dmResponsesReceived: activitiesData.filter(a => a.type === "dm_received").length,
+        });
+        
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -175,9 +226,15 @@ export default function Dashboard() {
               </Button>
             </div>
             <div className="space-y-3">
-              {mockJobs.slice(0, 3).map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading jobs...</div>
+              ) : jobs.length > 0 ? (
+                jobs.slice(0, 3).map((job) => (
+                  <JobCard key={job.id} job={job} />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">No jobs found</div>
+              )}
             </div>
           </div>
 
@@ -195,7 +252,11 @@ export default function Dashboard() {
               </Button>
             </div>
             <div className="rounded-lg border border-border bg-card p-4">
-              <ActivityFeed events={mockActivity.slice(0, 6)} compact />
+              {loading ? (
+                <div className="text-center py-4 text-muted-foreground">Loading activity...</div>
+              ) : (
+                <ActivityFeed events={activities.slice(0, 6)} compact />
+              )}
             </div>
           </div>
         </div>

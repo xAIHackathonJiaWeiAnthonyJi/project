@@ -48,3 +48,15 @@ class JobCandidate(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+class AgentLog(SQLModel, table=True):
+    """Logs for tracking all agent actions and operations"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    logtype: str  # Type of action: "sourcing", "scoring", "outreach", "search", "embedding", etc.
+    log: str = Field(sa_column=Column(Text))  # Detailed log message/description
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Optional context for additional data
+    job_id: Optional[int] = Field(default=None, foreign_key="job.id")
+    candidate_id: Optional[int] = Field(default=None, foreign_key="candidate.id")
+    context: Optional[Dict] = Field(default=None, sa_type=JSON)  # Additional context data
+

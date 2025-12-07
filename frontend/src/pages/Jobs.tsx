@@ -1,11 +1,38 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { JobCard } from "@/components/dashboard/JobCard";
-import { mockJobs } from "@/data/mockData";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Job } from "@/types";
 
 export default function Jobs() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const jobsData = await api.jobs.getAll();
+        setJobs(jobsData);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  const filteredJobs = jobs.filter(job =>
+    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <DashboardLayout>
       {/* Header */}
@@ -32,6 +59,8 @@ export default function Jobs() {
             <Input 
               placeholder="Search jobs..." 
               className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button variant="outline">
@@ -42,9 +71,19 @@ export default function Jobs() {
 
         {/* Jobs Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {mockJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
+          {loading ? (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Loading jobs...
+            </div>
+          ) : filteredJobs.length > 0 ? (
+            filteredJobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              {searchTerm ? "No jobs match your search." : "No jobs found."}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

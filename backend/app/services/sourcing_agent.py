@@ -13,6 +13,7 @@ from app.services.grok_role_service import verify_developers_batch
 from app.services.grok_scoring_service import compute_compatibility_score
 from app.services.x_outreach_service import send_outreach_batch  # DM (won't work)
 from app.services.x_mention_service import send_mentions_batch  # Public mentions (works!)
+from app.utils.logger import AgentLogger
 import json
 import os
 
@@ -58,21 +59,42 @@ class SourcingAgent:
         Returns:
             (embedding_vector, embedding_id)
         """
-        # Combine title and description for richer embedding
-        full_text = f"{job_title}\n\n{job_description}"
+        AgentLogger.log_embedding(
+            f"Starting embedding generation for job {job_id}: {job_title}",
+            job_id=job_id
+        )
         
-        # Generate embedding using OpenAI
-        embedding = generate_embedding(full_text)
-        
-        # Store in ChromaDB
-        metadata = {
-            "job_id": job_id,
-            "title": job_title,
-            "description": job_description[:500]  # Store first 500 chars
-        }
-        embedding_id = store_job_embedding(job_id, embedding, metadata)
-        
-        return embedding, embedding_id
+        try:
+            # Combine title and description for richer embedding
+            full_text = f"{job_title}\n\n{job_description}"
+            
+            # Generate embedding using OpenAI
+            embedding = generate_embedding(full_text)
+            
+            # Store in ChromaDB
+            metadata = {
+                "job_id": job_id,
+                "title": job_title,
+                "description": job_description[:500]  # Store first 500 chars
+            }
+            embedding_id = store_job_embedding(job_id, embedding, metadata)
+            
+            AgentLogger.log_embedding(
+                f"Successfully generated embedding for job {job_id}. Embedding ID: {embedding_id}",
+                job_id=job_id,
+                embedding_id=embedding_id,
+                embedding_dimensions=len(embedding)
+            )
+            
+            return embedding, embedding_id
+            
+        except Exception as e:
+            AgentLogger.log_error(
+                f"Failed to generate embedding for job {job_id}: {job_title}",
+                error=e,
+                job_id=job_id
+            )
+            raise
     
     # ========================================
     # STEP 2: EMBEDDING → TOPIC DISCOVERY
@@ -92,7 +114,27 @@ class SourcingAgent:
                 "search_queries": ["query1", "query2", ...]
             }
         """
-        return await discover_topics_from_job(job_title, job_description)
+        AgentLogger.log_sourcing(
+            f"Starting topic discovery for job: {job_title}"
+        )
+        
+        try:
+            result = await discover_topics_from_job(job_title, job_description)
+            
+            AgentLogger.log_sourcing(
+                f"Successfully discovered {len(result.get('topics', []))} topics and {len(result.get('search_queries', []))} search queries",
+                topics=result.get('topics', []),
+                search_queries=result.get('search_queries', [])
+            )
+            
+            return result
+            
+        except Exception as e:
+            AgentLogger.log_error(
+                f"Failed to discover topics for job: {job_title}",
+                error=e
+            )
+            raise
     
     # ========================================
     # STEP 3: TOPIC → ACTIVE X USERS
@@ -101,7 +143,8 @@ class SourcingAgent:
     async def step3_discover_x_users(
         self,
         topics: List[str],
-        search_queries: List[str]
+        search_queries: List[str],
+        job_id: Optional[int] = None
     ) -> List[Dict]:
         """
         Search X for users posting about topics
@@ -109,7 +152,32 @@ class SourcingAgent:
         Returns:
             List of X user profiles with signals
         """
-        return discover_users_from_topics(topics, search_queries, max_per_query=10)
+        AgentLogger.log_search(
+            f"Starting X user discovery for {len(topics)} topics and {len(search_queries)} search queries",
+            job_id=job_id,
+            topics=topics,
+            search_queries=search_queries
+        )
+        
+        try:
+            users = discover_users_from_topics(topics, search_queries, max_per_query=10)
+            
+            AgentLogger.log_search(
+                f"Successfully discovered {len(users)} X users posting about relevant topics",
+                job_id=job_id,
+                users_found=len(users),
+                topics_searched=len(topics)
+            )
+            
+            return users
+            
+        except Exception as e:
+            AgentLogger.log_error(
+                f"Failed to discover X users for topics: {topics}",
+                error=e,
+                job_id=job_id
+            )
+            raise
     
     # ========================================
     # STEP 4: X USERS → ROLE VERIFICATION
@@ -118,18 +186,46 @@ class SourcingAgent:
     async def step4_verify_developer_role(
         self,
         x_users: List[Dict],
-        job_title: str
+        job_title: str,
+        job_id: Optional[int] = None
     ) -> List[Dict]:
         """
         AI classification: Is this user a developer matching the role?
         """
-        return await verify_developers_batch(x_users, job_title)
+        AgentLogger.log_scoring(
+            f"Starting role verification for {len(x_users)} X users against {job_title} role",
+            job_id=job_id,
+            users_to_verify=len(x_users),
+            target_role=job_title
+        )
+        
+        try:
+            verified_developers = await verify_developers_batch(x_users, job_title)
+            filtered_count = len(x_users) - len(verified_developers)
+            
+            AgentLogger.log_scoring(
+                f"Role verification complete: {len(verified_developers)} developers verified, {filtered_count} filtered out",
+                job_id=job_id,
+                developers_verified=len(verified_developers),
+                users_filtered=filtered_count,
+                verification_rate=f"{(len(verified_developers)/len(x_users)*100):.1f}%" if x_users else "0%"
+            )
+            
+            return verified_developers
+            
+        except Exception as e:
+            AgentLogger.log_error(
+                f"Failed to verify developer roles for {len(x_users)} users",
+                error=e,
+                job_id=job_id
+            )
+            raise
     
     # ========================================
     # STEP 5: EXPERIENCE VALIDATION (MOCKED)
     # ========================================
     
-    def step5_get_linkedin_profile(self, x_handle: str, name: str = None) -> Optional[Dict]:
+    def step5_get_linkedin_profile(self, x_handle: str, name: str = None, job_id: Optional[int] = None) -> Optional[Dict]:
         """
         Mock LinkedIn profile retrieval with name-based fuzzy matching
         
@@ -165,7 +261,7 @@ class SourcingAgent:
         
         return None
     
-    def enrich_with_linkedin(self, verified_developers: List[Dict]) -> List[Dict]:
+    def enrich_with_linkedin(self, verified_developers: List[Dict], job_id: Optional[int] = None) -> List[Dict]:
         """
         Enrich verified developers with LinkedIn data (mocked)
         Uses X handle and real name for matching
@@ -176,7 +272,14 @@ class SourcingAgent:
         Returns:
             List of developers with linkedin_data field added
         """
+        AgentLogger.log_sourcing(
+            f"Starting LinkedIn enrichment for {len(verified_developers)} verified developers",
+            job_id=job_id,
+            developers_to_enrich=len(verified_developers)
+        )
+        
         enriched = []
+        linkedin_found = 0
         
         for dev in verified_developers:
             username = dev['username']
@@ -189,6 +292,7 @@ class SourcingAgent:
             if linkedin_profile:
                 dev['linkedin_data'] = linkedin_profile
                 dev['has_linkedin'] = True
+                linkedin_found += 1
                 print(f"  ✅ @{username} ({real_name}): Found LinkedIn ({linkedin_profile['headline']})")
             else:
                 # Create synthetic LinkedIn based on classification and X data
@@ -198,6 +302,14 @@ class SourcingAgent:
                 print(f"  ⚠️ @{username} ({real_name}): No LinkedIn found, using synthetic profile")
             
             enriched.append(dev)
+        
+        AgentLogger.log_sourcing(
+            f"LinkedIn enrichment complete: {linkedin_found} real profiles found, {len(enriched) - linkedin_found} synthetic profiles created",
+            job_id=job_id,
+            profiles_enriched=len(enriched),
+            real_linkedin_profiles=linkedin_found,
+            synthetic_profiles=len(enriched) - linkedin_found
+        )
         
         return enriched
     
@@ -238,7 +350,8 @@ class SourcingAgent:
         self,
         job_title: str,
         job_description: str,
-        enriched_candidates: List[Dict]
+        enriched_candidates: List[Dict],
+        job_id: Optional[int] = None
     ) -> List[Dict]:
         """
         AI-powered candidate-job fit scoring for all candidates
@@ -246,21 +359,58 @@ class SourcingAgent:
         Returns:
             List of candidates with compatibility scores added
         """
+        AgentLogger.log_scoring(
+            f"Starting compatibility scoring for {len(enriched_candidates)} candidates against {job_title}",
+            job_id=job_id,
+            candidates_to_score=len(enriched_candidates),
+            job_title=job_title
+        )
+        
         scored_candidates = []
+        scores = []
         
         for candidate in enriched_candidates:
-            print(f"📊 Scoring @{candidate['username']}...")
+            username = candidate.get('username', 'unknown')
+            print(f"📊 Scoring @{username}...")
             
-            score_data = await compute_compatibility_score(
-                job_title=job_title,
-                job_description=job_description,
-                candidate=candidate
-            )
-            
-            candidate['compatibility'] = score_data
-            scored_candidates.append(candidate)
-            
-            print(f"  ✅ Score: {score_data['compatibility_score']}/100")
+            try:
+                score_data = await compute_compatibility_score(
+                    job_title=job_title,
+                    job_description=job_description,
+                    candidate=candidate
+                )
+                
+                candidate['compatibility'] = score_data
+                scored_candidates.append(candidate)
+                scores.append(score_data['compatibility_score'])
+                
+                AgentLogger.log_scoring(
+                    f"Scored candidate @{username}: {score_data['compatibility_score']}/100",
+                    job_id=job_id,
+                    candidate_username=username,
+                    score=score_data['compatibility_score'],
+                    reasoning=score_data.get('reasoning', '')[:200]  # First 200 chars
+                )
+                
+                print(f"  ✅ Score: {score_data['compatibility_score']}/100")
+                
+            except Exception as e:
+                AgentLogger.log_error(
+                    f"Failed to score candidate @{username}",
+                    error=e,
+                    job_id=job_id,
+                    candidate_username=username
+                )
+                print(f"  ❌ Error scoring @{username}: {e}")
+        
+        avg_score = sum(scores) / len(scores) if scores else 0
+        AgentLogger.log_scoring(
+            f"Compatibility scoring complete: {len(scored_candidates)} candidates scored, average score: {avg_score:.1f}/100",
+            job_id=job_id,
+            candidates_scored=len(scored_candidates),
+            average_score=avg_score,
+            score_range=f"{min(scores):.1f}-{max(scores):.1f}" if scores else "N/A"
+        )
         
         return scored_candidates
     
@@ -293,8 +443,20 @@ class SourcingAgent:
                 "fasttrack": [...]
             }
         """
+        AgentLogger.log_sourcing(
+            f"Starting candidate routing with thresholds: reject<{threshold_reject}, takehome<{threshold_takehome}, interview<{threshold_interview}",
+            job_id=job_id,
+            candidates_to_route=len(candidates),
+            thresholds={
+                "reject": threshold_reject,
+                "takehome": threshold_takehome,
+                "interview": threshold_interview
+            }
+        )
+        
         if not candidates:
             print(f"   ⚠️ No candidates to process")
+            AgentLogger.log_sourcing("No candidates to route", job_id=job_id)
             return {"reject": [], "takehome": [], "interview": [], "fasttrack": []}
         
         routed = {
@@ -334,6 +496,18 @@ class SourcingAgent:
         # Candidates to reach out to (everything except reject)
         reach_out = routed["fasttrack"] + routed["interview"] + routed["takehome"]
         print(f"   📧 Total candidates to reach out: {len(reach_out)}")
+        
+        AgentLogger.log_sourcing(
+            f"Candidate routing complete: {len(routed['fasttrack'])} fasttrack, {len(routed['interview'])} interview, {len(routed['takehome'])} takehome, {len(routed['reject'])} reject",
+            job_id=job_id,
+            routing_results={
+                "fasttrack": len(routed['fasttrack']),
+                "interview": len(routed['interview']),
+                "takehome": len(routed['takehome']),
+                "reject": len(routed['reject']),
+                "total_outreach": len(reach_out)
+            }
+        )
         
         # TODO: Insert into database with recommendation field
         # TODO: Trigger outreach workflow for non-rejected candidates
@@ -382,24 +556,25 @@ class SourcingAgent:
         print("🐦 Step 3: Searching X for active users...")
         x_users = await self.step3_discover_x_users(
             topic_data['topics'], 
-            topic_data['search_queries']
+            topic_data['search_queries'],
+            job_id
         )
         print(f"✅ Found {len(x_users)} unique users on X")
         
         # Step 4: Verify developer roles
         print("🤖 Step 4: Verifying developer roles with Grok AI...")
-        verified_developers = await self.step4_verify_developer_role(x_users, job_title)
+        verified_developers = await self.step4_verify_developer_role(x_users, job_title, job_id)
         print(f"✅ Verified {len(verified_developers)} developers")
         
         # Step 5: Enrich with LinkedIn data (mocked)
         print("💼 Step 5: Enriching with LinkedIn data...")
-        enriched_candidates = self.enrich_with_linkedin(verified_developers)
+        enriched_candidates = self.enrich_with_linkedin(verified_developers, job_id)
         print(f"✅ Enriched {len(enriched_candidates)} candidates")
         
         # Step 6: Compute compatibility scores
         print("🎯 Step 6: Computing compatibility scores with Grok AI...")
         scored_candidates = await self.step6_compute_compatibility(
-            job_title, job_description, enriched_candidates
+            job_title, job_description, enriched_candidates, job_id
         )
         print(f"✅ Scored {len(scored_candidates)} candidates")
         

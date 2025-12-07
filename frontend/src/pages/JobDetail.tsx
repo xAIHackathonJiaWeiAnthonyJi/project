@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CandidateCard } from "@/components/candidates/CandidateCard";
-import { mockJobs, mockCandidates } from "@/data/mockData";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -13,8 +13,8 @@ import {
   Settings,
   MoreHorizontal
 } from "lucide-react";
-import { useState } from "react";
-import { CandidateStatus } from "@/types";
+import { useState, useEffect } from "react";
+import { CandidateStatus, Job, Candidate } from "@/types";
 
 const pipelineStages: { label: string; status: CandidateStatus }[] = [
   { label: "Sourced", status: "sourced" },
@@ -28,8 +28,45 @@ export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeStage, setActiveStage] = useState<CandidateStatus>("screened");
+  const [job, setJob] = useState<Job | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const job = mockJobs.find((j) => j.id === id);
+  useEffect(() => {
+    const fetchJobData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const jobId = parseInt(id);
+        
+        // Fetch job details and candidates in parallel
+        const [jobData, candidatesData] = await Promise.all([
+          api.jobs.getById(jobId),
+          api.candidates.getAll({ job_id: jobId })
+        ]);
+        
+        setJob(jobData);
+        setCandidates(candidatesData);
+      } catch (error) {
+        console.error("Error fetching job data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Loading job details...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!job) {
     return (
@@ -41,7 +78,7 @@ export default function JobDetail() {
     );
   }
 
-  const stageCandidates = mockCandidates.filter((c) => c.status === activeStage);
+  const stageCandidates = candidates.filter((c) => c.status === activeStage);
 
   return (
     <DashboardLayout>
@@ -101,7 +138,7 @@ export default function JobDetail() {
         <div className="px-8 pb-4">
           <div className="flex items-center gap-1 overflow-x-auto">
             {pipelineStages.map((stage, index) => {
-              const count = mockCandidates.filter((c) => c.status === stage.status).length;
+              const count = candidates.filter((c) => c.status === stage.status).length;
               const isActive = activeStage === stage.status;
               
               return (

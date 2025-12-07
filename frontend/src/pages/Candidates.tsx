@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CandidateCard } from "@/components/candidates/CandidateCard";
-import { mockCandidates } from "@/data/mockData";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Zap, Users } from "lucide-react";
-import { CandidateStatus } from "@/types";
+import { CandidateStatus, Candidate } from "@/types";
 
 const statusFilters: { label: string; value: CandidateStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -19,10 +19,35 @@ const statusFilters: { label: string; value: CandidateStatus | "all" }[] = [
 
 export default function Candidates() {
   const [activeFilter, setActiveFilter] = useState<CandidateStatus | "all">("all");
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredCandidates = activeFilter === "all" 
-    ? mockCandidates 
-    : mockCandidates.filter(c => c.status === activeFilter);
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        setLoading(true);
+        const candidatesData = await api.candidates.getAll();
+        setCandidates(candidatesData);
+      } catch (error) {
+        console.error("Error fetching candidates:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidates();
+  }, []);
+
+  const filteredCandidates = candidates.filter(candidate => {
+    const matchesFilter = activeFilter === "all" || candidate.status === activeFilter;
+    const matchesSearch = !searchTerm || 
+      candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.skills?.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <DashboardLayout>
@@ -32,7 +57,7 @@ export default function Candidates() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Candidates</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {mockCandidates.length} candidates across all jobs
+              {loading ? "Loading..." : `${candidates.length} candidates across all jobs`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -56,6 +81,8 @@ export default function Candidates() {
             <Input 
               placeholder="Search candidates..." 
               className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button variant="outline">
@@ -78,7 +105,7 @@ export default function Candidates() {
             >
               {filter.label}
               {filter.value === "all" && (
-                <span className="ml-1.5 text-xs opacity-70">({mockCandidates.length})</span>
+                <span className="ml-1.5 text-xs opacity-70">({candidates.length})</span>
               )}
             </button>
           ))}
@@ -86,20 +113,24 @@ export default function Candidates() {
 
         {/* Candidates Grid */}
         <div className="space-y-4">
-          {filteredCandidates.map((candidate) => (
-            <CandidateCard key={candidate.id} candidate={candidate} />
-          ))}
+          {loading ? (
+            <div className="text-center py-12 text-muted-foreground">Loading candidates...</div>
+          ) : filteredCandidates.length > 0 ? (
+            filteredCandidates.map((candidate) => (
+              <CandidateCard key={candidate.id} candidate={candidate} />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Users className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold text-foreground">No candidates found</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchTerm || activeFilter !== "all" 
+                  ? "Try adjusting your filters or search terms." 
+                  : "Try sourcing new candidates."}
+              </p>
+            </div>
+          )}
         </div>
-
-        {filteredCandidates.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground">No candidates found</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Try adjusting your filters or sourcing new candidates.
-            </p>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );
