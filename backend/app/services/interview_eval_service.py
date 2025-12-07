@@ -11,6 +11,13 @@ import httpx
 import json
 import os
 
+# Import adaptive learning for continuous improvement
+try:
+    from app.services.adaptive_learning_service import adaptive_learning_service
+    ADAPTIVE_LEARNING_ENABLED = True
+except ImportError:
+    ADAPTIVE_LEARNING_ENABLED = False
+
 
 class InterviewEvaluationService:
     """Service for AI evaluation of interview submissions"""
@@ -89,6 +96,10 @@ class InterviewEvaluationService:
                     score=evaluation["score"],
                     recommendation=evaluation["recommendation"]
                 )
+                
+                # Apply adaptive learning adjustments if enabled
+                if ADAPTIVE_LEARNING_ENABLED:
+                    evaluation = self._apply_learned_adjustments(evaluation)
                 
                 return evaluation
                 
@@ -194,14 +205,40 @@ Be objective, constructive, and specific in your evaluation."""
         questions = template.questions.get("questions", [])
         submission_data = submission.submission_data
         
-        # Format Q&A pairs
-        qa_pairs = []
-        for i, q in enumerate(questions):
-            answer = submission_data.get(f"answer_{i+1}", "No answer provided")
-            qa_pairs.append({
-                "question": q.get("question", ""),
-                "answer": answer
-            })
+        # Check if we have a transcript
+        if submission.call_transcript:
+            # Use transcript for evaluation
+            content = f"""**Call Transcript:**
+{submission.call_transcript}
+
+**Call Duration:** {submission.call_duration_minutes} minutes
+
+**Interview Questions (for reference):**
+{json.dumps(questions, indent=2)}"""
+            evaluation_note = """Analyze the conversation transcript carefully. Pay attention to:
+- How the candidate responds to questions
+- Their thought process and reasoning
+- Communication style and clarity
+- Technical depth in explanations
+- Enthusiasm and cultural fit indicators
+- Any red flags or concerns"""
+        else:
+            # Format Q&A pairs from structured data
+            qa_pairs = []
+            for i, q in enumerate(questions):
+                answer = submission_data.get(f"answer_{i+1}", "No answer provided")
+                qa_pairs.append({
+                    "question": q.get("question", ""),
+                    "answer": answer
+                })
+            
+            content = f"""**Interview Questions and Candidate Responses:**
+{json.dumps(qa_pairs, indent=2)}"""
+            evaluation_note = """Analyze the candidate's written responses. Consider:
+- Technical accuracy and depth
+- Completeness of answers
+- Communication clarity
+- Problem-solving approach"""
         
         prompt = f"""You are evaluating a phone screening interview for a {job.title} position.
 
@@ -211,16 +248,17 @@ Be objective, constructive, and specific in your evaluation."""
 **Job Requirements:**
 {json.dumps(job.requirements, indent=2)}
 
-**Interview Questions and Candidate Responses:**
-{json.dumps(qa_pairs, indent=2)}
+{content}
 
 **Evaluation Criteria:**
 {json.dumps(template.evaluation_criteria, indent=2)}
 
-Please evaluate these responses and provide your assessment in the following JSON format:
+{evaluation_note}
+
+Please provide your assessment in the following JSON format:
 {{
     "score": <number 0-100>,
-    "reasoning": "<detailed explanation of the score>",
+    "reasoning": "<detailed explanation of the score, 2-3 paragraphs>",
     "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
     "weaknesses": ["<weakness 1>", "<weakness 2>", "<weakness 3>"],
     "recommendation": "<strong_yes|yes|maybe|no>",
@@ -231,10 +269,11 @@ Please evaluate these responses and provide your assessment in the following JSO
 
 Evaluate considering:
 - Technical knowledge and accuracy
-- Communication clarity
+- Communication clarity and articulation
 - Problem-solving approach
 - Cultural fit indicators
 - Depth of understanding
+- Enthusiasm and engagement
 
 Be objective and provide specific examples from their responses."""
         
@@ -307,6 +346,51 @@ Be objective and provide specific examples from their responses."""
                 "weaknesses": ["Please review manually"],
                 "recommendation": "maybe"
             }
+    
+    def _apply_learned_adjustments(self, evaluation: Dict) -> Dict:
+        """
+        Apply learned adjustments to evaluation scores
+        
+        Uses historical data to calibrate scores and recommendations
+        """
+        try:
+            params = adaptive_learning_service.get_active_params("interview_agent")
+            
+            # If we have learning data, apply calibration
+            if params.total_predictions > 10:
+                # Adjust score based on historical accuracy
+                original_score = evaluation["score"]
+                
+                # Get stage precision metrics
+                stage_metrics = params.precision_by_stage.get(
+                    evaluation["recommendation"], 
+                    {"tp": 0, "fp": 0}
+                )
+                
+                tp = stage_metrics.get("tp", 0)
+                fp = stage_metrics.get("fp", 0)
+                precision = tp / (tp + fp) if (tp + fp) > 0 else 1.0
+                
+                # If we've been over-optimistic (low precision), be more conservative
+                if precision < 0.6:
+                    adjustment = -5 * (1 - precision)  # Up to -5 points
+                    evaluation["score"] = max(0, original_score + adjustment)
+                    evaluation["reasoning"] += f"\n\n[Adaptive Learning: Score adjusted by {adjustment:.1f} based on historical accuracy]"
+                
+                AgentLogger.log_interview(
+                    f"Applied adaptive learning adjustment: {original_score} → {evaluation['score']}",
+                    precision=precision,
+                    adjustment=evaluation["score"] - original_score
+                )
+        
+        except Exception as e:
+            # Don't fail evaluation if learning adjustment fails
+            AgentLogger.log_error(
+                "Failed to apply learned adjustments",
+                error=e
+            )
+        
+        return evaluation
 
 
 # Singleton instance

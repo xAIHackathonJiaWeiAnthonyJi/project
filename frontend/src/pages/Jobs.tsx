@@ -10,16 +10,20 @@ import { Job } from "@/types";
 export default function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
+        setError(null);
         const jobsData = await api.jobs.getAll();
+        console.log("Jobs loaded:", jobsData);
         setJobs(jobsData);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching jobs:", error);
+        setError(error.message || "Failed to load jobs. Is the backend running?");
       } finally {
         setLoading(false);
       }
@@ -74,6 +78,14 @@ export default function Jobs() {
           {loading ? (
             <div className="col-span-full text-center py-12 text-muted-foreground">
               Loading jobs...
+            </div>
+          ) : error ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-red-600 font-medium mb-2">Error Loading Jobs</div>
+              <div className="text-sm text-muted-foreground">{error}</div>
+              <div className="text-xs text-muted-foreground mt-2">
+                Check console for details. Make sure backend is running on port 8000.
+              </div>
             </div>
           ) : filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (

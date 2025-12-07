@@ -107,8 +107,27 @@ class InterviewService:
                 submission_id=submission.id
             )
             
-            # TODO: Send actual email/DM notification
-            # await self._send_interview_notification(candidate, job, template, submission)
+            # Send email notification
+            try:
+                from app.services.email_service import email_service
+                if candidate.email:
+                    submission_link = f"http://localhost:5173/submissions/{submission.id}"
+                    await email_service.send_interview_invitation(
+                        to_email=candidate.email,
+                        candidate_name=candidate.name,
+                        job_title=job.title,
+                        template_title=template.title,
+                        template_description=template.description,
+                        submission_link=submission_link,
+                        time_limit_hours=template.time_limit_hours or 48,
+                        questions=template.questions if isinstance(template.questions, list) else []
+                    )
+            except Exception as e:
+                AgentLogger.log_error(
+                    f"Failed to send interview invitation email",
+                    error=e,
+                    candidate_id=candidate_id
+                )
             
             return submission
     
@@ -217,14 +236,25 @@ class InterviewService:
                 final_score=score_override or submission.ai_score
             )
             
-            # TODO: Advance candidate stage
-            # TODO: Send next stage invitation
+            # Trigger pipeline integration
+            try:
+                from app.services.pipeline_integration import pipeline_integration
+                await pipeline_integration.on_interview_approved(
+                    submission_id=submission_id,
+                    candidate_id=submission.candidate_id,
+                    job_id=submission.job_id
+                )
+            except Exception as e:
+                AgentLogger.log_error(
+                    f"Failed to trigger pipeline integration for approved submission {submission_id}",
+                    error=e
+                )
             
             return {
                 "success": True,
                 "submission_id": submission_id,
                 "status": "approved",
-                "next_action": "send_next_stage_invitation"
+                "next_action": "candidate_advanced_to_interview_stage"
             }
     
     async def reject_submission(
@@ -269,14 +299,25 @@ class InterviewService:
                 reason=reviewer_notes
             )
             
-            # TODO: Update candidate stage to rejected
-            # TODO: Send rejection email
+            # Trigger pipeline integration
+            try:
+                from app.services.pipeline_integration import pipeline_integration
+                await pipeline_integration.on_interview_rejected(
+                    submission_id=submission_id,
+                    candidate_id=submission.candidate_id,
+                    job_id=submission.job_id
+                )
+            except Exception as e:
+                AgentLogger.log_error(
+                    f"Failed to trigger pipeline integration for rejected submission {submission_id}",
+                    error=e
+                )
             
             return {
                 "success": True,
                 "submission_id": submission_id,
                 "status": "rejected",
-                "next_action": "send_rejection_email"
+                "next_action": "candidate_marked_as_rejected"
             }
     
     def _format_questions_for_email(self, questions: List[Dict]) -> str:

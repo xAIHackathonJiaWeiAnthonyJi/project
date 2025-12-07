@@ -1,22 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import init_db
-from app.api.routes import jobs, logs, candidates, activity, sourcing, interviews
+from app.api.routes import jobs, logs, candidates, activity, sourcing, interviews, teams, learning, learning
 
 app = FastAPI(title="Grok Recruiter API")
 
-# Configure CORS
+# Configure CORS - Allow all origins in development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173", 
-        "http://localhost:8080",
-        "http://localhost:8081"
-    ], 
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=False,  # Must be False when using wildcard origins
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 @app.on_event("startup")
@@ -35,4 +31,7 @@ app.include_router(activity.router, prefix="/api")
 app.include_router(sourcing.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
 app.include_router(interviews.router, prefix="/api")
+app.include_router(teams.router, prefix="/api")
+app.include_router(learning.router, prefix="/api")
+app.include_router(learning.router, prefix="/api")
 

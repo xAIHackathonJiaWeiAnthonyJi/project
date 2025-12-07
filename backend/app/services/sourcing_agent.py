@@ -20,6 +20,13 @@ from sqlmodel import Session
 import json
 import os
 
+# Import adaptive learning for dynamic thresholds
+try:
+    from app.services.adaptive_learning_service import adaptive_learning_service
+    ADAPTIVE_LEARNING_ENABLED = True
+except ImportError:
+    ADAPTIVE_LEARNING_ENABLED = False
+
 # Load mock LinkedIn profiles
 with open("data/mock_linkedin_profiles.json", "r") as f:
     MOCK_LINKEDIN_PROFILES = json.load(f)
@@ -425,18 +432,19 @@ class SourcingAgent:
         self,
         candidates: List[Dict],
         job_id: int,
-        threshold_reject: int = 40,
-        threshold_takehome: int = 60,
-        threshold_interview: int = 75
+        threshold_reject: int = None,
+        threshold_takehome: int = None,
+        threshold_interview: int = None,
+        use_adaptive_learning: bool = True
     ) -> Dict:
         """
         Apply score thresholds to route candidates
         
-        Thresholds:
-        - < 40: Reject
-        - 40-59: Take-home assignment
-        - 60-74: Interview
-        - 75+: Fast-track interview
+        Thresholds (can be learned adaptively):
+        - < 40: Reject (default)
+        - 40-59: Take-home assignment (default)
+        - 60-74: Interview (default)
+        - 75+: Fast-track interview (default)
         
         Returns:
             {
@@ -446,6 +454,37 @@ class SourcingAgent:
                 "fasttrack": [...]
             }
         """
+        # Get learned thresholds if adaptive learning is enabled
+        if use_adaptive_learning and ADAPTIVE_LEARNING_ENABLED:
+            try:
+                params = adaptive_learning_service.get_active_params("sourcing_agent")
+                threshold_reject = threshold_reject or params.threshold_reject
+                threshold_takehome = threshold_takehome or params.threshold_takehome
+                threshold_interview = threshold_interview or params.threshold_interview
+                
+                AgentLogger.log_sourcing(
+                    f"Using LEARNED thresholds (version {params.version}, accuracy {params.accuracy:.1%})",
+                    job_id=job_id,
+                    learned_thresholds=True,
+                    version=params.version,
+                    accuracy=params.accuracy
+                )
+            except Exception as e:
+                # Fall back to defaults
+                threshold_reject = threshold_reject or 40
+                threshold_takehome = threshold_takehome or 60
+                threshold_interview = threshold_interview or 75
+                AgentLogger.log_sourcing(
+                    f"Could not load learned thresholds, using defaults: {e}",
+                    job_id=job_id,
+                    learned_thresholds=False
+                )
+        else:
+            # Use provided or default thresholds
+            threshold_reject = threshold_reject or 40
+            threshold_takehome = threshold_takehome or 60
+            threshold_interview = threshold_interview or 75
+        
         AgentLogger.log_sourcing(
             f"Starting candidate routing with thresholds: reject<{threshold_reject}, takehome<{threshold_takehome}, interview<{threshold_interview}",
             job_id=job_id,
@@ -521,7 +560,7 @@ class SourcingAgent:
     # DATABASE OPERATIONS
     # ========================================
     
-    def save_candidates_to_database(self, scored_candidates: List[Dict], job_id: int) -> Dict:
+    async def save_candidates_to_database(self, scored_candidates: List[Dict], job_id: int) -> Dict:
         """
         Save discovered candidates to the database
         
@@ -626,6 +665,25 @@ class SourcingAgent:
                 
                 session.commit()
                 
+                # Trigger interview auto-dispatch for takehome candidates
+                if stage == 'takehome_assigned':
+                    try:
+                        from app.services.pipeline_integration import pipeline_integration
+                        await pipeline_integration.handle_stage_change(
+                            candidate_id=candidate_id,
+                            job_id=job_id,
+                            old_stage='sourced',
+                            new_stage=stage
+                        )
+                    except Exception as integration_error:
+                        # Don't fail the whole pipeline if integration fails
+                        AgentLogger.log_error(
+                            f"Pipeline integration failed for candidate {candidate_id}",
+                            error=integration_error,
+                            candidate_id=candidate_id,
+                            job_id=job_id
+                        )
+                
         except Exception as e:
             AgentLogger.log_error(
                 f"Failed to save candidates to database for job {job_id}",
@@ -724,7 +782,7 @@ class SourcingAgent:
         # Save candidates to database
         print("💾 Saving candidates to database...")
         all_candidates = routed_candidates['fasttrack'] + routed_candidates['interview'] + routed_candidates['takehome'] + routed_candidates['reject']
-        save_results = self.save_candidates_to_database(all_candidates, job_id)
+        save_results = await self.save_candidates_to_database(all_candidates, job_id)
         print(f"✅ Saved {save_results['saved_count']} new candidates, updated {save_results['updated_count']} existing")
         
         # Step 8 (Optional): Send outreach via tweet mentions

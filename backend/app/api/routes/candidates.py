@@ -99,21 +99,70 @@ def get_candidates(
                     "x_bio": candidate.x_bio,
                     "linkedin_data": candidate.linkedin_data,
                     "created_at": candidate.created_at,
-                    "status": job_candidate.stage,
-                    "aiScore": job_candidate.compatibility_score,
-                    "aiReasoning": job_candidate.ai_reasoning,
-                    "strengths": job_candidate.strengths,
-                    "weaknesses": job_candidate.weaknesses,
-                    "jobId": job_candidate.job_id
+                "status": job_candidate.stage,
+                "aiScore": job_candidate.compatibility_score,
+                "aiReasoning": job_candidate.ai_reasoning,
+                "strengths": job_candidate.strengths,
+                "weaknesses": job_candidate.weaknesses,
+                "jobId": job_candidate.job_id
                 }
-                candidates.append(candidate_dict)
+            candidates.append(candidate_dict)
         
         return candidates
     else:
-        # Get all candidates
+        # Get all candidates with their job relationships
         query = select(Candidate).offset(offset).limit(limit)
-        candidates = session.exec(query).all()
-        return candidates
+        all_candidates = session.exec(query).all()
+        
+        result = []
+        for candidate in all_candidates:
+            # Get all jobs for this candidate
+            jc_query = select(JobCandidate).where(JobCandidate.candidate_id == candidate.id)
+            job_candidates = session.exec(jc_query).all()
+            
+            # If candidate is in jobs, return with best score
+            if job_candidates:
+                # Get the best compatibility score
+                best_jc = max(job_candidates, key=lambda jc: jc.compatibility_score or 0)
+                
+                candidate_dict = {
+                    "id": candidate.id,
+                    "name": candidate.name,
+                    "email": candidate.email,
+                    "x_handle": candidate.x_handle,
+                    "x_bio": candidate.x_bio,
+                    "linkedin_data": candidate.linkedin_data,
+                    "created_at": candidate.created_at,
+                    "status": best_jc.stage,
+                    "aiScore": best_jc.compatibility_score,
+                    "aiReasoning": best_jc.ai_reasoning,
+                    "strengths": best_jc.strengths,
+                    "weaknesses": best_jc.weaknesses,
+                    "jobId": best_jc.job_id,
+                    "job_count": len(job_candidates)
+                }
+                result.append(candidate_dict)
+            else:
+                # Candidate not linked to any job yet
+                candidate_dict = {
+                    "id": candidate.id,
+                    "name": candidate.name,
+                    "email": candidate.email,
+                    "x_handle": candidate.x_handle,
+                    "x_bio": candidate.x_bio,
+                    "linkedin_data": candidate.linkedin_data,
+                    "created_at": candidate.created_at,
+                    "status": "new",
+                    "aiScore": None,
+                    "aiReasoning": None,
+                    "strengths": None,
+                    "weaknesses": None,
+                    "jobId": None,
+                    "job_count": 0
+                }
+                result.append(candidate_dict)
+        
+        return result
 
 @router.get("/{candidate_id}", response_model=Candidate)
 def get_candidate(candidate_id: int, session: Session = Depends(get_session)):

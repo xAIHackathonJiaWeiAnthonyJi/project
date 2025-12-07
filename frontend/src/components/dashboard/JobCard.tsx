@@ -54,7 +54,7 @@ export function JobCard({ job }: JobCardProps) {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {job.requirements.slice(0, 4).map((req) => (
+        {(job.requirements?.skills || []).slice(0, 4).map((req) => (
           <Badge key={req} variant="outline" className="text-[10px] py-0">
             {req}
           </Badge>

@@ -16,11 +16,14 @@ import {
   Calendar,
   Sparkles,
   ChevronRight,
-  RotateCcw
+  RotateCcw,
+  Send,
+  Users
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Candidate, CandidateStatus } from "@/types";
 import { QuickActionModal } from "../components/candidates/QuickActionModal";
+import { DispatchInterviewModal } from "../components/interviews/DispatchInterviewModal";
 
 const statusLabels: Record<string, string> = {
   sourced: "SOURCED",
@@ -51,6 +54,7 @@ export default function CandidateDetail() {
   const [loading, setLoading] = useState(true);
   const [currentStage, setCurrentStage] = useState<CandidateStatus>("sourced");
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
 
   // Debug logging
   console.log("CandidateDetail - id:", id, "jobId:", jobId, "isQuickActionOpen:", isQuickActionOpen);
@@ -77,8 +81,8 @@ export default function CandidateDetail() {
           }
         } else {
           // No job context, get general candidate data
-          const candidateData = await api.candidates.getById(candidateId);
-          setCandidate(candidateData);
+        const candidateData = await api.candidates.getById(candidateId);
+        setCandidate(candidateData);
         }
       } catch (error) {
         console.error("Error fetching candidate:", error);
@@ -137,7 +141,7 @@ export default function CandidateDetail() {
                 {(candidate.status || currentStage) && (
                   <Badge variant={statusVariants[candidate.status || currentStage]}>
                     {statusLabels[candidate.status || currentStage]}
-                  </Badge>
+                </Badge>
                 )}
                 {candidate.aiScore !== undefined && (
                   <span className={`text-lg font-mono font-semibold ${getScoreColor(candidate.aiScore)}`}>
@@ -192,13 +196,32 @@ export default function CandidateDetail() {
                     LinkedIn
                   </Button>
                 )}
+                {jobId && (
+                  <>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/candidates/${candidate.id}/teams`)}
+                    >
+                      <Users className="h-3.5 w-3.5 mr-1.5" />
+                      Team Matching
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => setIsDispatchModalOpen(true)}
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1.5" />
+                      Send Interview
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
             {jobId && (
               <div className="text-sm text-muted-foreground">
                 Job Context Available - Stage management below
-              </div>
+            </div>
             )}
           </div>
         </div>
@@ -287,11 +310,13 @@ export default function CandidateDetail() {
                   {candidate.linkedin_data.experience.map((exp, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-accent text-xs font-medium text-muted-foreground">
-                        {exp.company.charAt(0)}
+                        {exp?.company?.charAt(0) || exp?.role?.charAt(0) || 'E'}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">{exp.role}</p>
-                        <p className="text-sm text-muted-foreground">{exp.company} · {exp.duration}</p>
+                        <p className="text-sm font-medium text-foreground">{exp?.role || 'Role not specified'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {exp?.company || 'Company not specified'} · {exp?.duration || 'Duration not specified'}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -343,29 +368,37 @@ export default function CandidateDetail() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.repos}</p>
+                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.repos || 0}</p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Repos</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.stars.toLocaleString()}</p>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {(candidate.linkedin_data.github_stats.stars || 0).toLocaleString()}
+                    </p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Stars</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-foreground">{candidate.linkedin_data.github_stats.contributions.toLocaleString()}</p>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {(candidate.linkedin_data.github_stats.contributions || 0).toLocaleString()}
+                    </p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Contributions</p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Languages</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {candidate.linkedin_data.github_stats.languages.map((lang) => (
-                      <Badge key={lang} variant="secondary" className="text-xs">
-                        {lang}
-                      </Badge>
-                    ))}
+                {candidate.linkedin_data.github_stats.languages && 
+                 Array.isArray(candidate.linkedin_data.github_stats.languages) && 
+                 candidate.linkedin_data.github_stats.languages.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Languages</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {candidate.linkedin_data.github_stats.languages.map((lang: string) => (
+                        <Badge key={lang} variant="secondary" className="text-xs">
+                          {lang}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </section>
             )}
 
@@ -401,6 +434,22 @@ export default function CandidateDetail() {
             if (candidate.status !== undefined) {
               setCandidate(prev => prev ? { ...prev, status: newStage } : null);
             }
+          }}
+        />
+      )}
+
+      {/* Dispatch Interview Modal */}
+      {candidate && jobId && (
+        <DispatchInterviewModal
+          open={isDispatchModalOpen}
+          onOpenChange={setIsDispatchModalOpen}
+          candidateId={candidate.id}
+          candidateName={candidate.name}
+          jobId={parseInt(jobId)}
+          jobTitle="Current Job" // TODO: Get actual job title
+          onSuccess={() => {
+            // Refresh candidate data
+            fetchCandidate();
           }}
         />
       )}

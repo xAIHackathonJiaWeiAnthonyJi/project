@@ -38,11 +38,12 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export const jobsApi = {
   async getAll(): Promise<Job[]> {
     const jobs = await fetchApi<Job[]>("/jobs/");
-    // Convert date strings to Date objects and ensure proper types
+    // Ensure proper types for requirements field
     return jobs.map(job => ({
       ...job,
-      createdAt: new Date(job.created_at),
-      requirements: Array.isArray(job.requirements) ? job.requirements : job.requirements?.skills || []
+      requirements: typeof job.requirements === 'object' && !Array.isArray(job.requirements) 
+        ? job.requirements 
+        : { skills: Array.isArray(job.requirements) ? job.requirements : [] }
     }));
   },
 
@@ -50,8 +51,9 @@ export const jobsApi = {
     const job = await fetchApi<Job>(`/jobs/${id}`);
     return {
       ...job,
-      createdAt: new Date(job.created_at),
-      requirements: Array.isArray(job.requirements) ? job.requirements : job.requirements?.skills || []
+      requirements: typeof job.requirements === 'object' && !Array.isArray(job.requirements)
+        ? job.requirements
+        : { skills: Array.isArray(job.requirements) ? job.requirements : [] }
     };
   },
 
@@ -173,10 +175,7 @@ export const activityApi = {
     if (params?.offset) searchParams.append("offset", params.offset.toString());
 
     const activities = await fetchApi<ActivityEvent[]>(`/activity/feed?${searchParams.toString()}`);
-    return activities.map(activity => ({
-      ...activity,
-      timestamp: new Date(activity.timestamp)
-    }));
+    return activities;
   },
 
   async getStats(days: number = 7): Promise<{
@@ -198,10 +197,7 @@ export const activityApi = {
 
   async getRecentOutreach(limit: number = 20): Promise<ActivityEvent[]> {
     const activities = await fetchApi<ActivityEvent[]>(`/activity/recent-outreach?limit=${limit}`);
-    return activities.map(activity => ({
-      ...activity,
-      timestamp: new Date(activity.timestamp)
-    }));
+    return activities;
   }
 };
 
@@ -292,6 +288,152 @@ export const sourcingApi = {
   }
 };
 
+// Interview API
+export const interviewsApi = {
+  async createTemplate(data: {
+    job_id: number;
+    interview_type: string;
+    title: string;
+    description: string;
+    questions: any[];
+    evaluation_criteria: any;
+    time_limit_hours?: number;
+  }) {
+    return await fetchApi("/interviews/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getTemplates(params?: { job_id?: number; interview_type?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.job_id) searchParams.append("job_id", params.job_id.toString());
+    if (params?.interview_type) searchParams.append("interview_type", params.interview_type);
+    return await fetchApi(`/interviews/templates?${searchParams.toString()}`);
+  },
+
+  async dispatchInterview(data: {
+    candidate_id: number;
+    job_id: number;
+    template_id: number;
+  }) {
+    return await fetchApi("/interviews/dispatch", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getSubmissions(params?: {
+    job_id?: number;
+    candidate_id?: number;
+    status?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.job_id) searchParams.append("job_id", params.job_id.toString());
+    if (params?.candidate_id) searchParams.append("candidate_id", params.candidate_id.toString());
+    if (params?.status) searchParams.append("status", params.status);
+    return await fetchApi(`/interviews/?${searchParams.toString()}`);
+  },
+
+  async getSubmission(id: number) {
+    return await fetchApi(`/interviews/${id}`);
+  },
+
+  async submitResponse(id: number, data: any) {
+    return await fetchApi(`/interviews/${id}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ submission_data: data }),
+    });
+  },
+
+  async triggerEvaluation(id: number) {
+    return await fetchApi(`/interviews/${id}/evaluate`, {
+      method: "POST",
+    });
+  },
+
+  async reviewSubmission(id: number, data: {
+    reviewer_name: string;
+    action: "approve" | "reject";
+    reviewer_notes?: string;
+    score_override?: number;
+  }) {
+    return await fetchApi(`/interviews/${id}/review`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getPendingReviews(job_id?: number) {
+    const url = job_id 
+      ? `/interviews/pending-reviews/?job_id=${job_id}`
+      : "/interviews/pending-reviews/";
+    return await fetchApi(url);
+  },
+
+  async getStats(job_id: number) {
+    return await fetchApi(`/interviews/stats/${job_id}`);
+  },
+};
+
+// Teams API
+export const teamsApi = {
+  async getAll() {
+    return await fetchApi("/teams/");
+  },
+
+  async getById(id: number) {
+    return await fetchApi(`/teams/${id}`);
+  },
+
+  async create(data: {
+    name: string;
+    description?: string;
+    tech_stack: string[];
+    team_size: number;
+    manager_name?: string;
+    current_needs: string[];
+    team_culture?: string;
+    projects?: string[];
+    location?: string;
+  }) {
+    return await fetchApi("/teams/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async matchCandidate(candidateId: number, jobId: number) {
+    return await fetchApi("/teams/match", {
+      method: "POST",
+      body: JSON.stringify({
+        candidate_id: candidateId,
+        job_id: jobId,
+      }),
+    });
+  },
+
+  async getCandidateMatches(candidateId: number, jobId?: number) {
+    const params = new URLSearchParams();
+    if (jobId) params.append("job_id", jobId.toString());
+    return await fetchApi(`/teams/matches/${candidateId}?${params.toString()}`);
+  },
+
+  async getMatch(matchId: number) {
+    return await fetchApi(`/teams/matches/${matchId}`);
+  },
+
+  async approveMatch(matchId: number, reviewerName: string, notes?: string) {
+    return await fetchApi(`/teams/matches/${matchId}/approve`, {
+      method: "POST",
+      body: JSON.stringify({
+        reviewer_name: reviewerName,
+        reviewer_notes: notes,
+      }),
+    });
+  },
+};
+
 // Export all APIs
 export const api = {
   jobs: jobsApi,
@@ -299,4 +441,6 @@ export const api = {
   activity: activityApi,
   logs: logsApi,
   sourcing: sourcingApi,
+  interviews: interviewsApi,
+  teams: teamsApi,
 };

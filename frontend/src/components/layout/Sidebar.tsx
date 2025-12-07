@@ -6,16 +6,22 @@ import {
   Settings,
   Terminal,
   Bot,
-  BarChart3
+  BarChart3,
+  ClipboardCheck,
+  Brain,
+  UsersRound
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
-  { name: "Agent Control", href: "/agent-control", icon: Bot },
+  { name: "Agents", href: "/agents", icon: Bot },
   { name: "Jobs", href: "/jobs", icon: Briefcase },
   { name: "Candidates", href: "/candidates", icon: Users },
+  { name: "Teams", href: "/teams", icon: UsersRound },
+  { name: "Interviews", href: "/interviews", icon: ClipboardCheck },
   { name: "Activity", href: "/activity", icon: Activity },
+  { name: "Learning", href: "/learning", icon: Brain, badge: "AI" },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -25,10 +31,16 @@ export function Sidebar() {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-14 items-center gap-2.5 border-b border-border px-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-foreground/10">
-            <Terminal className="h-4 w-4 text-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+            <img 
+              src="/grok-logo.svg" 
+              alt="Grok Logo" 
+              className="h-5 w-5 brightness-0 invert"
+            />
           </div>
-          <span className="text-base font-semibold text-foreground tracking-tight">GrokReach</span>
+          <span className="text-base font-semibold text-foreground tracking-tight">
+            Grok<span className="text-primary">Reach</span>
+          </span>
         </div>
 
         {/* Navigation */}
