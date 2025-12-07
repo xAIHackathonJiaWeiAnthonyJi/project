@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e5e5e5;
+        }
+        h1 {
+            color: #00d9ff;
+            border-bottom: 2px solid #00d9ff;
+            padding-bottom: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .candidate {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: transform 0.2s;
+        }
+        .candidate:hover {
+            transform: translateY(-2px);
+            border-color: #00d9ff;
+        }
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-left: 10px;
+        }
+        .score-high { background: #10b98120; color: #10b981; }
+        .score-med { background: #f59e0b20; color: #f59e0b; }
+        .score-low { background: #ef444420; color: #ef4444; }
+        .bio {
+            background: #252525;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-style: italic;
+            border-left: 3px solid #00d9ff;
+        }
+        .reasoning {
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 3px solid #8b5cf6;
+        }
+        .strengths, .weaknesses {
+            margin: 10px 0;
+        }
+        .strengths span, .weaknesses span {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .strengths span {
+            background: #10b98115;
+            color: #10b981;
+            border: 1px solid #10b98150;
+        }
+        .weaknesses span {
+            background: #f59e0b15;
+            color: #f59e0b;
+            border: 1px solid #f59e0b50;
+        }
+        .skills {
+            margin: 10px 0;
+        }
+        .skills span {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: #334155;
+            color: #cbd5e1;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #00d9ff;
+        }
+        .filters {
+            margin: 20px 0;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .filters button {
+            background: #252525;
+            color: #e5e5e5;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filters button:hover {
+            background: #333;
+            border-color: #00d9ff;
+        }
+        .filters button.active {
+            background: #00d9ff;
+            color: #0a0a0a;
+            border-color: #00d9ff;
+        }
+        .meta {
+            color: #888;
+            font-size: 14px;
+        }
+        a {
+            color: #00d9ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Candidate Integration Test</h1>
+    
+    <div class="filters">
+        <label><strong>Job:</strong></label>
+        <button onclick="loadCandidates(1)" id="job1">Job 1: Frontend Engineer</button>
+        <button onclick="loadCandidates(2)" id="job2" class="active">Job 2: ML Engineer</button>
+        <button onclick="loadCandidates(3)" id="job3">Job 3: Backend Engineer</button>
+        <button onclick="loadCandidates(null)" id="joball">All Candidates</button>
+    </div>
+
+    <div id="loading" class="loading">Loading candidates...</div>
+    <div id="candidates"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let currentJob = 2;
+
+        function getScoreClass(score) {
+            if (score >= 75) return 'score-high';
+            if (score >= 50) return 'score-med';
+            return 'score-low';
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'interview': '#8b5cf6',
+                'takehome_assigned': '#f59e0b',
+                'rejected': '#ef4444',
+                'screened': '#06b6d4',
+                'sourced': '#64748b'
+            };
+            return colors[status] || '#64748b';
+        }
+
+        async function loadCandidates(jobId) {
+            currentJob = jobId;
+            
+            // Update active button
+            document.querySelectorAll('.filters button').forEach(btn => btn.classList.remove('active'));
+            if (jobId === 1) document.getElementById('job1').classList.add('active');
+            else if (jobId === 2) document.getElementById('job2').classList.add('active');
+            else if (jobId === 3) document.getElementById('job3').classList.add('active');
+            else document.getElementById('joball').classList.add('active');
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('candidates').innerHTML = '';
+
+            try {
+                const url = jobId ? `${API_BASE}/candidates/?job_id=${jobId}` : `${API_BASE}/candidates/`;
+                const response = await fetch(url);
+                const candidates = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (candidates.length === 0) {
+                    document.getElementById('candidates').innerHTML = '<p style="text-align:center;padding:40px;color:#888;">No candidates found</p>';
+                    return;
+                }
+
+                // Sort by score (descending)
+                candidates.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
+
+                let html = `<p class="meta">Found ${candidates.length} candidates</p>`;
+
+                candidates.forEach((candidate, index) => {
+                    const score = candidate.aiScore;
+                    const scoreClass = score ? getScoreClass(score) : 'score-low';
+                    const statusColor = getStatusColor(candidate.status);
+
+                    html += `
+                        <div class="candidate">
+                            <div>
+                                <h2 style="margin:0;display:inline-block;">${candidate.name}</h2>
+                                ${score ? `<span class="score ${scoreClass}">${score}/100</span>` : ''}
+                                <span class="status" style="background:${statusColor}20;color:${statusColor};border:1px solid ${statusColor}50;">
+                                    ${candidate.status || 'sourced'}
+                                </span>
+                            </div>
+                            
+                            <p class="meta">
+                                <a href="https://twitter.com/${(candidate.x_handle || '').replace('@', '')}" target="_blank">
+                                    ${candidate.x_handle || 'No handle'}
+                                </a>
+                                ${candidate.email ? ` • ${candidate.email}` : ''}
+                                ${candidate.linkedin_data?.location ? ` • ${candidate.linkedin_data.location}` : ''}
+                            </p>
+
+                            ${candidate.x_bio ? `
+                                <div class="bio">
+                                    <strong>🐦 X Bio:</strong> ${candidate.x_bio}
+                                </div>
+                            ` : ''}
+
+                            ${candidate.aiReasoning ? `
+                                <div class="reasoning">
+                                    <strong>🤖 AI Reasoning:</strong> ${candidate.aiReasoning}
+                                </div>
+                            ` : ''}
+
+                            ${candidate.strengths && candidate.strengths.length > 0 ? `
+                                <div class="strengths">
+                                    <strong style="color:#10b981;">✅ Strengths:</strong><br>
+                                    ${candidate.strengths.map(s => `<span>${s}</span>`).join('')}
+                                </div>
+                            ` : ''}
+
+                            ${candidate.weaknesses && candidate.weaknesses.length > 0 ? `
+                                <div class="weaknesses">
+                                    <strong style="color:#f59e0b;">⚠️ Areas for Growth:</strong><br>
+                                    ${candidate.weaknesses.map(w => `<span>${w}</span>`).join('')}
+                                </div>
+                            ` : ''}
+
+                            ${candidate.linkedin_data?.skills && candidate.linkedin_data.skills.length > 0 ? `
+                                <div class="skills">
+                                    <strong>💼 Skills:</strong><br>
+                                    ${candidate.linkedin_data.skills.slice(0, 8).map(s => `<span>${s}</span>`).join('')}
+                                </div>
+                            ` : ''}
+
+                            ${candidate.linkedin_data?.github_stats ? `
+                                <p class="meta" style="margin-top:10px;">
+                                    ⭐ ${candidate.linkedin_data.github_stats.stars} stars • 
+                                    📦 ${candidate.linkedin_data.github_stats.repos} repos • 
+                                    🔥 ${candidate.linkedin_data.github_stats.contributions} contributions
+                                </p>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                document.getElementById('candidates').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('candidates').innerHTML = `
+                    <p style="text-align:center;padding:40px;color:#ef4444;">
+                        Error loading candidates: ${error.message}
+                    </p>
+                `;
+            }
+        }
+
+        // Load Job 2 candidates on page load
+        loadCandidates(2);
+    </script>
+</body>
+</html>
+

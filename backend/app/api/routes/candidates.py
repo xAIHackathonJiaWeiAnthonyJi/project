@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from app.db.database import get_session
@@ -6,7 +6,7 @@ from app.models.schemas import Candidate, JobCandidate, XSignal
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
-@router.get("/", response_model=List[Candidate])
+@router.get("/")
 def get_candidates(
     session: Session = Depends(get_session),
     job_id: Optional[int] = Query(None, description="Filter candidates by job ID"),
@@ -34,13 +34,13 @@ def get_candidates(
         # Combine candidate and job-candidate data
         candidates = []
         for candidate, job_candidate in results:
-            candidate_dict = candidate.dict()
+            candidate_dict = candidate.model_dump()
             candidate_dict.update({
                 "status": job_candidate.stage,
                 "aiScore": job_candidate.compatibility_score,
                 "aiReasoning": job_candidate.ai_reasoning,
-                "strengths": job_candidate.strengths,
-                "weaknesses": job_candidate.weaknesses,
+                "strengths": job_candidate.strengths or [],
+                "weaknesses": job_candidate.weaknesses or [],
                 "jobId": job_candidate.job_id
             })
             candidates.append(candidate_dict)
