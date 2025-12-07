@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sqlmodel
+sqlite-utils
+python-dotenv
+httpx
+faiss-cpu
+numpy

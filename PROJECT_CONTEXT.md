@@ -90,19 +90,19 @@ This is a **real product MVP**, not a toy demo.
 
 All code must follow this stack:
 
-- **Frontend:** Next.js + TypeScript + Tailwind + shadcn/ui
+- **Frontend:** React (Create React App) + TypeScript + Chakra UI
 
-- **Backend:** Next.js API routes
+- **Backend:** Python (FastAPI)
 
-- **Database:** Postgres (Supabase or Neon)
+- **Database:** SQLite (SQLModel/SQLAlchemy)
 
-- **Vectors:** pgvector
+- **Vectors:** FAISS or ChromaDB (Local)
 
-- **AI:** Grok API + OpenAI embeddings
+- **AI:** Grok API (for everything: parsing, embeddings, screening)
 
-- **Background Jobs:** Inngest or Trigger.dev
+- **Background Jobs:** Python async tasks
 
-- **Deployment:** Vercel
+- **Deployment:** Frontend (Vercel/Netlify), Backend (Railway/Render)
 
 ---
 
