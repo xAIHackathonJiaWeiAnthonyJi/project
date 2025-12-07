@@ -11,9 +11,9 @@ import { CandidateStatus, Candidate } from "@/types";
 const statusFilters: { label: string; value: CandidateStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Sourced", value: "sourced" },
-  { label: "Screened", value: "screened" },
-  { label: "Take-home", value: "takehome_assigned" },
-  { label: "Interview", value: "interview" },
+  { label: "Reached Out", value: "reached_out" },
+  { label: "Phone Screened", value: "phone_screened" },
+  { label: "Team Matched", value: "team_matched" },
   { label: "Rejected", value: "rejected" },
 ];
 
@@ -28,7 +28,12 @@ export default function Candidates() {
       try {
         setLoading(true);
         const candidatesData = await api.candidates.getAll();
-        setCandidates(candidatesData);
+        // Add default status for display purposes
+        const candidatesWithStatus = candidatesData.map(candidate => ({
+          ...candidate,
+          status: candidate.status || "sourced" as CandidateStatus
+        }));
+        setCandidates(candidatesWithStatus);
       } catch (error) {
         console.error("Error fetching candidates:", error);
       } finally {
@@ -40,7 +45,8 @@ export default function Candidates() {
   }, []);
 
   const filteredCandidates = candidates.filter(candidate => {
-    const matchesFilter = activeFilter === "all" || candidate.status === activeFilter;
+    const candidateStatus = candidate.status || "sourced";
+    const matchesFilter = activeFilter === "all" || candidateStatus === activeFilter;
     const matchesSearch = !searchTerm || 
       candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       candidate.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,22 +99,26 @@ export default function Candidates() {
 
         {/* Status Tabs */}
         <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-          {statusFilters.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setActiveFilter(filter.value)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeFilter === filter.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-              }`}
-            >
-              {filter.label}
-              {filter.value === "all" && (
-                <span className="ml-1.5 text-xs opacity-70">({candidates.length})</span>
-              )}
-            </button>
-          ))}
+          {statusFilters.map((filter) => {
+            const count = filter.value === "all" 
+              ? candidates.length 
+              : candidates.filter(c => (c.status || "sourced") === filter.value).length;
+            
+            return (
+              <button
+                key={filter.value}
+                onClick={() => setActiveFilter(filter.value)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeFilter === filter.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {filter.label}
+                <span className="ml-1.5 text-xs opacity-70">({count})</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Candidates Grid */}

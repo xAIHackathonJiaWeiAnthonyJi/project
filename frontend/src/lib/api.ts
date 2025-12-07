@@ -1,4 +1,4 @@
-import { Job, Candidate, ActivityEvent, AgentLog, JobCandidate } from "@/types";
+import { Job, Candidate, ActivityEvent, AgentLog, JobCandidate, CandidateStage, StageUpdateRequest, CandidateStatus } from "@/types";
 
 const API_BASE_URL = "http://localhost:8000/api";
 
@@ -134,6 +134,29 @@ export const candidatesApi = {
       method: "POST",
       body: JSON.stringify({ status }),
     });
+  },
+
+  async updateStage(candidateId: number, jobId: number, request: StageUpdateRequest): Promise<{
+    success: boolean;
+    previous_stage: CandidateStatus;
+    new_stage: CandidateStatus;
+    candidate_name: string;
+    updated_at: string;
+  }> {
+    return await fetchApi(`/candidates/${candidateId}/jobs/${jobId}/update-stage`, {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  },
+
+  async getStages(): Promise<{
+    stages: CandidateStage[];
+    workflow: {
+      linear_progression: CandidateStatus[];
+      can_reject_from_any: boolean;
+    };
+  }> {
+    return await fetchApi("/candidates/stages");
   }
 };
 

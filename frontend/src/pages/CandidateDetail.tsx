@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { StageManager } from "@/components/candidates/StageManager";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,26 +19,22 @@ import {
   RotateCcw
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Candidate } from "@/types";
+import { Candidate, CandidateStatus } from "@/types";
 
 const statusLabels: Record<string, string> = {
   sourced: "SOURCED",
-  screened: "SCREENED",
-  takehome_assigned: "TAKE-HOME",
-  takehome_reviewed: "REVIEWED",
-  interview: "INTERVIEW",
-  offer: "OFFER",
+  reached_out: "REACHED OUT",
+  phone_screened: "PHONE SCREENED",
+  team_matched: "TEAM MATCHED",
   rejected: "REJECTED",
 };
 
-const statusVariants: Record<string, "sourced" | "screened" | "takehome" | "interview" | "offer" | "rejected"> = {
-  sourced: "sourced",
-  screened: "screened",
-  takehome_assigned: "takehome",
-  takehome_reviewed: "takehome",
-  interview: "interview",
-  offer: "offer",
-  rejected: "rejected",
+const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  sourced: "outline",
+  reached_out: "secondary",
+  phone_screened: "default",
+  team_matched: "default",
+  rejected: "destructive",
 };
 
 function getScoreColor(score: number): string {
@@ -47,10 +44,11 @@ function getScoreColor(score: number): string {
 }
 
 export default function CandidateDetail() {
-  const { id } = useParams();
+  const { id, jobId } = useParams();
   const navigate = useNavigate();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentStage, setCurrentStage] = useState<CandidateStatus>("sourced");
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -59,8 +57,24 @@ export default function CandidateDetail() {
       try {
         setLoading(true);
         const candidateId = parseInt(id);
-        const candidateData = await api.candidates.getById(candidateId);
-        setCandidate(candidateData);
+        
+        if (jobId) {
+          // If we have job context, get candidates for that job to get stage info
+          const jobCandidates = await api.candidates.getAll({ job_id: parseInt(jobId) });
+          const candidateData = jobCandidates.find(c => c.id === candidateId);
+          if (candidateData) {
+            setCandidate(candidateData);
+            setCurrentStage(candidateData.status || "sourced");
+          } else {
+            // Fallback to general candidate data
+            const candidateData = await api.candidates.getById(candidateId);
+            setCandidate(candidateData);
+          }
+        } else {
+          // No job context, get general candidate data
+          const candidateData = await api.candidates.getById(candidateId);
+          setCandidate(candidateData);
+        }
       } catch (error) {
         console.error("Error fetching candidate:", error);
       } finally {
@@ -69,7 +83,7 @@ export default function CandidateDetail() {
     };
 
     fetchCandidate();
-  }, [id]);
+  }, [id, jobId]);
 
   if (loading) {
     return (
@@ -115,9 +129,11 @@ export default function CandidateDetail() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-semibold text-foreground">{candidate.name}</h1>
-                <Badge variant={statusVariants[candidate.status]}>
-                  {statusLabels[candidate.status]}
-                </Badge>
+                {(candidate.status || currentStage) && (
+                  <Badge variant={statusVariants[candidate.status || currentStage]}>
+                    {statusLabels[candidate.status || currentStage]}
+                  </Badge>
+                )}
                 {candidate.aiScore !== undefined && (
                   <span className={`text-lg font-mono font-semibold ${getScoreColor(candidate.aiScore)}`}>
                     {candidate.aiScore.toFixed(1)}
@@ -174,16 +190,11 @@ export default function CandidateDetail() {
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <Button variant="outline">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Override Decision
-              </Button>
-              <Button>
-                Advance Stage
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
+            {jobId && (
+              <div className="text-sm text-muted-foreground">
+                Job Context Available - Stage management below
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -298,8 +309,26 @@ export default function CandidateDetail() {
             )}
           </div>
 
-          {/* Right Column - GitHub Stats */}
+          {/* Right Column - Stage Management & GitHub Stats */}
           <div className="space-y-6">
+            {/* Stage Manager - only show if we have job context */}
+            {jobId && (
+              <StageManager
+                candidateId={candidate.id}
+                jobId={parseInt(jobId)}
+                currentStage={currentStage}
+                candidateName={candidate.name}
+                onStageUpdate={(newStage) => {
+                  setCurrentStage(newStage);
+                  // Update the candidate object if it has status
+                  if (candidate.status !== undefined) {
+                    setCandidate(prev => prev ? { ...prev, status: newStage } : null);
+                  }
+                }}
+              />
+            )}
+
+            {/* GitHub Stats */}
             {candidate.linkedin_data?.github_stats && (
               <section className="rounded-lg border border-border bg-card p-5">
                 <div className="flex items-center gap-2 mb-4">
